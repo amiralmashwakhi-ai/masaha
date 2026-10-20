@@ -72,6 +72,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
     <View style={{ flex: 1 }}>
     <ScrollView>
       <H>{serviceName(job, t)}</H>
+      {job.invitedProviderId && <P muted>{t('directTo').replace('{n}', providerOf(job.invitedProviderId)?.name ?? t('provider'))}</P>}
       {!!job.notes && <P muted>{job.notes}</P>}
       <P muted>{JOB_STAGES.includes(job.stage) ? `${t(`stage.${job.stage}`)} (${JOB_STAGES.indexOf(job.stage) + 1}/${JOB_STAGES.length})` : t(`stage.${job.stage}`)}</P>
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}

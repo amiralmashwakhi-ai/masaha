@@ -8,9 +8,9 @@ import { PostCard } from './Posts';
 import { ReportBlock } from './Safety';
 import { ReviewList } from './ReviewList';
 
-export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onNewPost, onEdit, onBack }: {
+export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onDirect, onNewPost, onEdit, onBack }: {
   provider: Provider; role: Role; mine: boolean; viewerId: string;
-  onRequest: (service: ServiceId) => void; onNewPost?: () => void; onEdit?: () => void; onBack: () => void;
+  onRequest: (service: ServiceId) => void; onDirect?: () => void; onNewPost?: () => void; onEdit?: () => void; onBack: () => void;
 }) {
   const { t } = useLang();
   const stars = avgStars(provider.reviews.map((r) => r.stars));
@@ -28,6 +28,7 @@ export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onN
           `${provider.experienceYears} ${t('years')}`].join(' · ')}
       </P>
       {provider.licenseNo && <P muted>{provider.licenseNo}</P>}
+      {!mine && role === 'customer' && onDirect && <Button title={t('requestDirect')} icon="account-arrow-right-outline" onPress={onDirect} />}
       {!provider.verified && !mine && <Card><P small>{`⚠ ${t('unverifiedWarn')}`}</P></Card>}
       <Card>
         <P>{t('cv')}</P>

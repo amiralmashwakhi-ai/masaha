@@ -32,7 +32,7 @@ export function ReportBlock({ reporterId, userId, postId, chatId, canBlock, onBl
 }
 
 const NOTE_ICON: Record<string, IconName> = {
-  newJob: 'briefcase-plus-outline', newQuote: 'cash-multiple', jobUpdate: 'progress-check',
+  newJob: 'briefcase-plus-outline', directRequest: 'account-arrow-right-outline', newQuote: 'cash-multiple', jobUpdate: 'progress-check',
   chatRequest: 'chat-question-outline', chatAccepted: 'chat-processing-outline', chatMessage: 'chat-outline',
   verified: 'check-decagram', rejected: 'alert-circle-outline',
 };

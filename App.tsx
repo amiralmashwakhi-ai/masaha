@@ -22,7 +22,7 @@ import { Job, Lang, Provider, Role, ServiceId } from './src/types';
 import { colors, Header, LangCtx, P, setDark } from './src/ui';
 
 type Screen =
-  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId } | { name: 'editProvider' } | { name: 'settings' }
+  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId; providerId?: string } | { name: 'editProvider' } | { name: 'settings' }
   | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'operator' }
   | { name: 'job'; id: string; back?: Screen } | { name: 'profile'; id: string; back: Screen };
 
@@ -222,6 +222,7 @@ export default function App() {
             {ready && screen.name === 'wizard' && userId && (
               <RequestWizard
                 initialService={screen.service}
+                invited={screen.providerId ? { id: screen.providerId, name: providers.find((p) => p.id === screen.providerId)?.name ?? '' } : undefined}
                 onCancel={() => setScreen({ name: 'jobs' })}
                 onDone={async (r) => {
                   await run(() => data.createJob(userId, r))();
@@ -252,6 +253,7 @@ export default function App() {
                 mine={viewedProvider.id === userId}
                 viewerId={userId!}
                 onRequest={requestService}
+                onDirect={() => setScreen({ name: 'wizard', providerId: viewedProvider.id })}
                 onNewPost={() => setScreen({ name: 'newPost' })}
                 onEdit={() => setScreen({ name: 'editProvider' })}
                 onBack={() => setScreen(screen.back)}

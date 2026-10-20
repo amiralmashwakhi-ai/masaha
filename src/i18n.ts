@@ -327,6 +327,10 @@ const en = {
   'otherHint': 'A service not listed here',
   'otherName': 'What service do you need?',
   'otherPrice': 'The price is set by the surveyors\' quotes.',
+  'requestDirect': 'Request a service from this surveyor',
+  'directTo': 'Direct request to {n}',
+  'directHint': 'Only this surveyor will see your request and send you a quote.',
+  'note.directRequest': 'A customer requested a service from you directly',
 };
 
 type Key = keyof typeof en;
@@ -657,6 +661,10 @@ const ar: Record<Key, string> = {
   'otherHint': 'خدمة غير موجودة في القائمة',
   'otherName': 'ما الخدمة التي تحتاجها؟',
   'otherPrice': 'يُحدَّد السعر من عروض المساحين.',
+  'requestDirect': 'اطلب خدمة من هذا المساح',
+  'directTo': 'طلب مباشر إلى {n}',
+  'directHint': 'لن يرى طلبك ويقدّم لك عرض سعر إلا هذا المساح.',
+  'note.directRequest': 'طلب مباشر لك من عميل',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

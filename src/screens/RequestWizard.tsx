@@ -8,8 +8,8 @@ const emptyLocation: PlotLocation = {
   governorate: '', directorate: '', village: '', basin: '', plotNumber: '',
 };
 
-export function RequestWizard({ initialService, onDone, onCancel }: {
-  initialService?: ServiceId; onDone: (r: ServiceRequest) => void; onCancel: () => void;
+export function RequestWizard({ initialService, invited, onDone, onCancel }: {
+  initialService?: ServiceId; invited?: { id: string; name: string }; onDone: (r: ServiceRequest) => void; onCancel: () => void;
 }) {
   const { t } = useLang();
   const [service, setService] = useState<ServiceId | null>(initialService ?? null);
@@ -27,6 +27,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
     return (
       <ScrollView>
         <H>{t('services')}</H>
+        {invited && <Card><P>{t('directTo').replace('{n}', invited.name)}</P><P muted small>{t('directHint')}</P></Card>}
         {SERVICES.map((sv) => (
           <OptionRow
             key={sv.id}
@@ -46,6 +47,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
     <ScrollView>
       <View style={{ alignItems: 'center', marginBottom: 6 }}><IconCircle name={info.icon} size={56} /></View>
       <H>{t(`service.${service}`)}</H>
+      {invited && <P muted>{t('directTo').replace('{n}', invited.name)}</P>}
       {service === 'other' && <Field label={t('otherName')} value={custom} onChange={setCustom} />}
       <P muted>{t('location')}</P>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 }}>
@@ -114,6 +116,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
             visitLength: info.perVisit ? length : undefined,
             withReport: info.perVisit ? withReport : undefined,
             customService: service === 'other' ? custom.trim() : undefined,
+            invitedProviderId: invited?.id,
             createdAt: new Date().toISOString(),
             stage: 'requested',
           })

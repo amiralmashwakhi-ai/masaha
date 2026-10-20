@@ -36,6 +36,7 @@ export interface ServiceRequest {
   visitLength?: VisitLength;
   withReport?: boolean; // staking: written report or not
   customService?: string; // the customer's own words when service is 'other'
+  invitedProviderId?: string; // a direct request: only this surveyor sees and quotes on it
   createdAt: string;
   stage: JobStage;
 }
