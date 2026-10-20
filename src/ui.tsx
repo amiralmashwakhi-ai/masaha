@@ -33,8 +33,8 @@ export function Card({ children, onPress }: { children: React.ReactNode; onPress
   return <Pressable onPress={onPress} style={s.card}>{children}</Pressable>;
 }
 
-export function Field({ label, value, onChange, numeric }: {
-  label: string; value: string; onChange: (v: string) => void; numeric?: boolean;
+export function Field({ label, value, onChange, numeric, secure }: {
+  label: string; value: string; onChange: (v: string) => void; numeric?: boolean; secure?: boolean;
 }) {
   const { rtl } = useLang();
   return (
@@ -45,6 +45,8 @@ export function Field({ label, value, onChange, numeric }: {
         value={value}
         onChangeText={onChange}
         keyboardType={numeric ? 'numeric' : 'default'}
+        secureTextEntry={secure}
+        autoCapitalize="none"
       />
     </View>
   );

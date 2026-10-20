@@ -16,12 +16,12 @@ export function useSession() {
   return { session, loading };
 }
 
-// Email one-time code; phone SMS needs an SMS provider connected in Supabase first.
-export const sendCode = (email: string) =>
-  supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+// Email and password; Supabase's default confirmation email (a link) works on the free plan without template changes.
+export const signUp = (email: string, password: string) =>
+  supabase.auth.signUp({ email, password, options: { emailRedirectTo: 'https://masaha-kappa.vercel.app' } });
 
-export const verifyCode = (email: string, token: string) =>
-  supabase.auth.verifyOtp({ email, token, type: 'email' });
+export const signIn = (email: string, password: string) =>
+  supabase.auth.signInWithPassword({ email, password });
 
 export async function loadProfile(userId: string) {
   const { data } = await supabase.from('profiles').select('id, role, full_name, phone').eq('id', userId).maybeSingle();
