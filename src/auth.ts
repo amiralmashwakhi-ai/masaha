@@ -1,9 +1,11 @@
 import { Session } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { Role } from './types';
 
-export interface Profile { id: string; role: Role | 'admin'; full_name: string; phone: string | null }
+export interface Profile { id: string; role: Role | 'admin'; full_name: string; phone: string | null; cover_url: string | null }
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -18,13 +20,13 @@ export function useSession() {
 
 // Email and password; Supabase's default confirmation email (a link) works on the free plan without template changes.
 export const signUp = (email: string, password: string) =>
-  supabase.auth.signUp({ email, password, options: { emailRedirectTo: 'https://masaha-kappa.vercel.app' } });
+  supabase.auth.signUp({ email, password, options: { emailRedirectTo: 'https://masaha-kappa.vercel.app/reset-password.html' } });
 
 export const signIn = (email: string, password: string) =>
   supabase.auth.signInWithPassword({ email, password });
 
 export async function loadProfile(userId: string) {
-  const { data } = await supabase.from('profiles').select('id, role, full_name, phone').eq('id', userId).maybeSingle();
+  const { data } = await supabase.from('profiles').select('id, role, full_name, phone, cover_url').eq('id', userId).maybeSingle();
   return data as Profile | null;
 }
 
@@ -39,3 +41,30 @@ export async function createProfile(userId: string, fullName: string, phone: str
 }
 
 export const signOut = () => supabase.auth.signOut();
+
+// Opens Supabase's hosted reset page flow; the email link lands on the website, where the new password is set.
+export const sendPasswordReset = (email: string) =>
+  supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://masaha-kappa.vercel.app/reset-password.html' });
+
+export const changePassword = (password: string) => supabase.auth.updateUser({ password });
+
+WebBrowser.maybeCompleteAuthSession();
+
+// Google sign-in in the system browser; Supabase sends the user back to masaha://auth with the session.
+export async function signInWithGoogle() {
+  const redirectTo = Linking.createURL('auth');
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo, skipBrowserRedirect: true },
+  });
+  if (error || !data.url) return error ?? new Error('no url');
+  const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (res.type !== 'success') return null;
+  const params = new URLSearchParams(res.url.split('#')[1] ?? res.url.split('?')[1] ?? '');
+  const code = params.get('code');
+  if (code) return (await supabase.auth.exchangeCodeForSession(code)).error;
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+  if (!access_token || !refresh_token) return new Error(params.get('error_description') ?? 'sign-in cancelled');
+  return (await supabase.auth.setSession({ access_token, refresh_token })).error;
+}

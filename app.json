@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#2F6F73",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -26,6 +26,21 @@
     "extra": {
       "supportsRTL": true
     },
-    "owner": "amir.masaha"
+    "owner": "amir.masaha",
+    "scheme": "masaha",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F6F3ED"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Masaha uses your photos to set your cover photo."
+        }
+      ],
+      "expo-web-browser"
+    ]
   }
 }

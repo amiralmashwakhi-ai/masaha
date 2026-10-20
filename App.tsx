@@ -6,16 +6,17 @@ import * as data from './src/data';
 import { applyDirection, makeT } from './src/i18n';
 import { EditProvider } from './src/screens/EditProvider';
 import { Home } from './src/screens/Home';
+import { Settings } from './src/screens/Settings';
 import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
 import { ProviderProfile } from './src/screens/ProviderProfile';
 import { RequestWizard } from './src/screens/RequestWizard';
 import { CreateProfile, SignIn } from './src/screens/SignIn';
 import { Job, Lang, Provider, Role } from './src/types';
-import { colors, LangCtx, P } from './src/ui';
+import { colors, Header, LangCtx, P } from './src/ui';
 
 type Screen =
-  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard' } | { name: 'editProvider' }
+  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard' } | { name: 'editProvider' } | { name: 'settings' }
   | { name: 'job'; id: string } | { name: 'profile'; id: string; back: Screen };
 
 export default function App() {
@@ -33,7 +34,12 @@ export default function App() {
   useEffect(() => { setProfile(undefined); refreshProfile(); }, [userId]);
   useEffect(() => { if (profile && profile.role !== 'admin') setRole(profile.role); }, [profile]);
 
-  const ctx = useMemo(() => ({ lang, t: makeT(lang), rtl: lang === 'ar' }), [lang]);
+  const toggleLang = () => {
+    const next = lang === 'ar' ? 'en' : 'ar';
+    applyDirection(next);
+    setLang(next);
+  };
+  const ctx = useMemo(() => ({ lang, t: makeT(lang), rtl: lang === 'ar', toggleLang }), [lang]);
 
   const refresh = useCallback(async () => {
     if (!userId || !profile) return;
@@ -54,12 +60,6 @@ export default function App() {
   const run = (fn: () => Promise<unknown>) => async () => {
     try { await fn(); } catch { setError(ctx.t('somethingWrong')); }
     await refresh();
-  };
-
-  const toggleLang = () => {
-    const next = lang === 'ar' ? 'en' : 'ar';
-    applyDirection(next);
-    setLang(next);
   };
 
   const actions: JobActions = {
@@ -84,17 +84,31 @@ export default function App() {
     <LangCtx.Provider value={ctx}>
       <SafeAreaView style={styles.safe}>
         <View style={styles.body}>
+          <Header />
           {!loading && !session && <SignIn />}
           {session && profile === undefined && <P muted>{ctx.t('loading')}</P>}
-          {session && profile === null && userId && <CreateProfile userId={userId} onDone={refreshProfile} />}
+          {session && profile === null && userId && (
+            <CreateProfile userId={userId} defaultName={session.user.user_metadata?.full_name} onDone={refreshProfile} />
+          )}
           {!!error && ready && <P>{error}</P>}
           {ready && screen.name === 'home' && (
             <Home
               role={role}
-              onToggleLang={toggleLang}
-              onSignOut={() => { signOut(); setScreen({ name: 'home' }); }}
-              onRole={() => setScreen({ name: 'jobs' })}
+              name={profile.full_name}
+              coverUrl={profile.cover_url}
+              onJobs={() => setScreen({ name: 'jobs' })}
+              onNew={() => setScreen({ name: 'wizard' })}
               onEditProfile={role === 'provider' && me ? () => setScreen({ name: 'editProvider' }) : undefined}
+              onSettings={() => setScreen({ name: 'settings' })}
+            />
+          )}
+          {ready && screen.name === 'settings' && (
+            <Settings
+              profile={profile}
+              isProvider={role === 'provider'}
+              onChanged={() => { refreshProfile(); refresh(); }}
+              onSignOut={() => { signOut(); setScreen({ name: 'home' }); }}
+              onBack={() => setScreen({ name: 'home' })}
             />
           )}
           {ready && screen.name === 'editProvider' && me && (
@@ -145,5 +159,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  body: { flex: 1, padding: 16, paddingTop: 40 },
+  body: { flex: 1, paddingHorizontal: 16, paddingTop: 44 },
 });

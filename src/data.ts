@@ -87,7 +87,7 @@ export const releaseMilestone = (jobId: string, key: Milestone['key']) => rpc('r
 interface ProviderRow {
   id: string; kind: Provider['kind']; display_name: string; license_no: string | null; verified: boolean;
   experience_years: number; cv_education: string | null; cv_experience: string[]; cv_equipment: string[];
-  services: ServiceId[]; governorates: string[];
+  services: ServiceId[]; governorates: string[]; cover_url: string | null;
 }
 
 export async function reviewsAbout(subjectId: string): Promise<Review[]> {
@@ -108,7 +108,7 @@ export async function loadProviders(ids: string[]): Promise<Provider[]> {
     id: p.id, name: p.display_name, kind: p.kind, licenseNo: p.license_no ?? undefined, verified: p.verified,
     experienceYears: p.experience_years,
     cv: { education: p.cv_education ?? '', experience: p.cv_experience, equipment: p.cv_equipment },
-    services: p.services, governorates: p.governorates,
+    services: p.services, governorates: p.governorates, coverUrl: p.cover_url ?? undefined,
     reviews: await reviewsAbout(p.id),
   })));
 }
@@ -128,5 +128,56 @@ export async function leaveReview(job: Job, authorId: string, authorRole: Role, 
     job_id: job.id, author_id: authorId, author_role: authorRole, author_name: authorName,
     subject_id: subjectId, stars, body: body || null,
   });
+  if (error) throw error;
+}
+
+export async function updateProfile(userId: string, fields: { full_name?: string; phone?: string; cover_url?: string }) {
+  const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
+  if (error) throw error;
+}
+
+// Uploads to covers/<user id>/cover-<time>.jpg and returns the public URL.
+export async function uploadCover(userId: string, uri: string, mime = 'image/jpeg') {
+  const body = await (await fetch(uri)).arrayBuffer();
+  const path = `${userId}/cover-${Date.now()}.jpg`;
+  const { error } = await supabase.storage.from('covers').upload(path, body, { contentType: mime, upsert: true });
+  if (error) throw error;
+  return supabase.storage.from('covers').getPublicUrl(path).data.publicUrl;
+}
+
+export async function setProviderCover(userId: string, url: string) {
+  const { error } = await supabase.from('providers').update({ cover_url: url }).eq('id', userId);
+  if (error) throw error;
+}
+
+export interface PaymentMethod {
+  id: string; kind: 'cliq' | 'visa' | 'mastercard'; cliq_alias: string | null; last4: string | null; is_default: boolean;
+}
+
+export async function listPaymentMethods() {
+  const { data, error } = await supabase
+    .from('payment_methods')
+    .select('id, kind, cliq_alias, last4, is_default')
+    .order('created_at');
+  if (error) throw error;
+  return (data ?? []) as PaymentMethod[];
+}
+
+export async function addCliq(userId: string, alias: string, makeDefault: boolean) {
+  const { error } = await supabase.from('payment_methods').insert({ user_id: userId, kind: 'cliq', cliq_alias: alias, is_default: makeDefault });
+  if (error) throw error;
+}
+
+export async function setDefaultMethod(methods: PaymentMethod[], id: string) {
+  for (const m of methods) {
+    if (m.is_default !== (m.id === id)) {
+      const { error } = await supabase.from('payment_methods').update({ is_default: m.id === id }).eq('id', m.id);
+      if (error) throw error;
+    }
+  }
+}
+
+export async function removeMethod(id: string) {
+  const { error } = await supabase.from('payment_methods').delete().eq('id', id);
   if (error) throw error;
 }

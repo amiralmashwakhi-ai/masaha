@@ -60,6 +60,7 @@ export interface Provider {
   cv: { education: string; experience: string[]; equipment: string[] };
   services: ServiceId[];
   governorates: string[];
+  coverUrl?: string;
   reviews: Review[];
 }
 

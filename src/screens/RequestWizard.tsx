@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { GOVERNORATES, SERVICES } from '../services';
 import { PlotLocation, ServiceId, ServiceRequest } from '../types';
-import { Button, Card, Field, H, P, useLang } from '../ui';
+import { Button, Card, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
 
 const emptyLocation: PlotLocation = {
   governorate: '', directorate: '', village: '', basin: '', plotNumber: '',
@@ -18,24 +18,28 @@ export function RequestWizard({ onDone, onCancel }: {
   const [notes, setNotes] = useState('');
   const set = (k: keyof PlotLocation) => (v: string) => setLoc({ ...loc, [k]: v });
 
-  if (!service) {
+  const info = SERVICES.find((x) => x.id === service);
+  if (!service || !info) {
     return (
       <ScrollView>
         <H>{t('services')}</H>
         {SERVICES.map((sv) => (
-          <Card key={sv.id} onPress={() => setService(sv.id)}>
-            <P>{t(`service.${sv.id}`)}</P>
-            <P muted>{`${sv.baseJod[0]}–${sv.baseJod[1]} ${t('jod')}`}</P>
-          </Card>
+          <OptionRow
+            key={sv.id}
+            icon={sv.icon}
+            title={t(`service.${sv.id}`)}
+            subtitle={`${sv.baseJod[0]}–${sv.baseJod[1]} ${t('jod')}`}
+            onPress={() => setService(sv.id)}
+          />
         ))}
         <Button title={t('back')} onPress={onCancel} secondary />
       </ScrollView>
     );
   }
 
-  const info = SERVICES.find((x) => x.id === service)!;
   return (
     <ScrollView>
+      <View style={{ alignItems: 'center', marginBottom: 6 }}><IconCircle name={info.icon} size={56} /></View>
       <H>{t(`service.${service}`)}</H>
       <P muted>{t('location')}</P>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 }}>

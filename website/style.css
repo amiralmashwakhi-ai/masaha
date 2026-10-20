@@ -1,8 +1,8 @@
-:root{--bg:#F5F3EE;--card:#fff;--ink:#33413C;--muted:#7A8782;--primary:#4F8F80;--soft:#E6F0ED;--line:#E6E2DA}
+:root{--bg:#F6F3ED;--card:#fff;--ink:#2D3A3A;--muted:#7B8786;--primary:#2F6F73;--soft:#E3EEEE;--accent:#E0A458;--line:#E7E2D8}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.8}
 header{background:var(--primary);color:#fff;padding:18px 0;border-radius:0 0 24px 24px}header .wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 header nav{display:flex;flex-wrap:wrap;gap:6px}header a{color:#fff;text-decoration:none;font-size:15px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14)}
-header a:hover{background:rgba(255,255,255,.26)}.brand{font-size:22px;font-weight:700;margin:0}
+header a:hover{background:rgba(255,255,255,.26)}.brand{font-size:20px;font-weight:700;margin:0;display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}.brand img{width:40px;height:40px;border-radius:10px;background:#fff}
 .wrap{max-width:960px;margin:0 auto;padding:0 16px}main{padding:28px 0}
 .card{background:var(--card);border-radius:22px;padding:24px;margin-bottom:18px;box-shadow:0 4px 18px rgba(91,80,64,.08)}
 .grid .card{background:var(--soft);box-shadow:none;border-radius:18px;padding:18px;margin:0}
@@ -12,3 +12,6 @@ a{color:var(--primary)}
 .en{direction:ltr;text-align:left;border-top:1px solid var(--line);margin-top:26px;padding-top:18px}
 footer{padding:22px 0;color:var(--muted);font-size:14px}footer a{color:var(--primary);margin-inline-end:14px}
 .pay{display:flex;gap:8px;margin-top:8px}.pay span{border-radius:12px;padding:4px 12px;background:#fff;font-weight:700;box-shadow:0 2px 8px rgba(91,80,64,.08)}
+form{display:grid;gap:10px;max-width:380px}input{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+button{font:inherit;font-weight:600;color:#fff;background:var(--primary);border:0;border-radius:14px;padding:12px;cursor:pointer}
+.note{background:#FBF0E1;border-radius:12px;padding:10px 12px}

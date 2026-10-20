@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { Image, ScrollView } from 'react-native';
 import { avgStars } from '../money';
 import { Provider } from '../types';
 import { Button, Card, H, P, useLang } from '../ui';
@@ -10,6 +10,9 @@ export function ProviderProfile({ provider, onBack }: { provider: Provider; onBa
   const stars = avgStars(provider.reviews.map((r) => r.stars));
   return (
     <ScrollView>
+      {provider.coverUrl && (
+        <Image source={{ uri: provider.coverUrl }} style={{ width: '100%', height: 110, borderRadius: 20, marginBottom: 12 }} />
+      )}
       <H>{provider.name}</H>
       <P muted>
         {[t(provider.kind), provider.verified ? `✓ ${t('verified')}` : t('unverified'),
