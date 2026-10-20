@@ -105,14 +105,20 @@ async function load() {
 $('f').onsubmit = async (e) => {
   e.preventDefault();
   const { error } = await sb.auth.signInWithPassword({ email: $('em').value, password: $('pw').value });
-  say(error ? 'الإيميل أو كلمة المرور غير صحيحة.' : ''); load();
+  say(!error ? '' : error.code === 'email_not_confirmed' ? 'لم يتم تأكيد الإيميل بعد. افتح إيميل التأكيد من Supabase (تفقّد الرسائل غير المرغوبة) واضغط الرابط.'
+    : 'الإيميل أو كلمة المرور غير صحيحة.'); load();
 };
+let signing = false;
 $('signup').onclick = async (e) => {
   e.preventDefault();
+  if (signing) return;
   if (!$('em').value || $('pw').value.length < 6) return say('اكتب الإيميل وكلمة مرور من 6 أحرف على الأقل، ثم اضغط هنا مرة أخرى.');
+  signing = true; say('جارٍ الإنشاء…');
   const { error } = await sb.auth.signUp({ email: $('em').value, password: $('pw').value,
     options: { emailRedirectTo: 'https://masaha-kappa.vercel.app/reset-password.html' } });
-  say(error ? 'حدث خطأ: ' + error.message : 'وصلك إيميل تأكيد. افتحه واضغط الرابط، ثم ارجع وسجّل الدخول هنا.');
+  signing = false;
+  say(error && error.status === 429 ? 'أُرسل إيميل التأكيد قبل قليل. افتحه واضغط الرابط (تفقّد الرسائل غير المرغوبة).'
+    : error ? 'حدث خطأ: ' + error.message : 'وصلك إيميل تأكيد. افتحه واضغط الرابط، ثم ارجع وسجّل الدخول هنا.');
 };
 $('out').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); say(''); load(); };
 load();
