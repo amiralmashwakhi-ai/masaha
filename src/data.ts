@@ -365,6 +365,8 @@ export async function submitLicense(userId: string, uri: string, name: string, m
   const { error } = await supabase.storage.from('licenses').upload(path, body, { contentType: mime });
   if (error) throw error;
   await rpc('submit_license', { p_path: path, p_license_no: licenseNo });
+  // Emails Masaha's office; the bell alert is already sent, so a failure here is not shown.
+  supabase.functions.invoke('license-email').catch(() => {});
 }
 
 export async function verificationStatus(userId: string): Promise<'none' | 'pending' | 'verified' | 'rejected'> {
