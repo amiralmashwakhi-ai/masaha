@@ -16,6 +16,6 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - name: Build Android APK
-        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --no-wait
+        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
