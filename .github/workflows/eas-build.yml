@@ -1,0 +1,21 @@
+# Builds an installable Android test app on Expo's servers. Needs the EXPO_TOKEN repository secret.
+name: Android test build
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Link the Expo project (first run only)
+        run: npx eas-cli@latest init --non-interactive --force
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Build Android APK
+        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
