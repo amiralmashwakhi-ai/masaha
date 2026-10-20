@@ -1,5 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { loadProfile, Profile, signOut, useSession } from './src/auth';
+import { CreateProfile, SignIn } from './src/screens/SignIn';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 import { applyDirection, makeT } from './src/i18n';
 import { DEFAULT_MILESTONES, round } from './src/money';
@@ -26,6 +28,13 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   // Local state only until the backend is connected.
   const [jobs, setJobs] = useState<Job[]>([]);
+
+  const { session, loading } = useSession();
+  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
+  const userId = session?.user.id;
+  const refreshProfile = () => { if (userId) loadProfile(userId).then(setProfile); };
+  useEffect(() => { setProfile(undefined); refreshProfile(); }, [userId]);
+  useEffect(() => { if (profile && profile.role !== 'admin') setRole(profile.role); }, [profile]);
 
   const ctx = useMemo(() => ({ lang, t: makeT(lang), rtl: lang === 'ar' }), [lang]);
 
@@ -77,16 +86,23 @@ export default function App() {
   };
 
   const current = screen.name === 'job' ? jobs.find((j) => j.id === screen.id) : undefined;
-  const profile = screen.name === 'profile' ? SEED_PROVIDERS.find((p) => p.id === screen.id) : undefined;
+  const provider = screen.name === 'profile' ? SEED_PROVIDERS.find((p) => p.id === screen.id) : undefined;
 
   return (
     <LangCtx.Provider value={ctx}>
       <SafeAreaView style={styles.safe}>
         <View style={styles.body}>
-          {screen.name === 'home' && (
-            <Home onToggleLang={toggleLang} onRole={(r) => { setRole(r); setScreen({ name: 'jobs' }); }} />
+          {!loading && !session && <SignIn />}
+          {session && profile === null && userId && <CreateProfile userId={userId} onDone={refreshProfile} />}
+          {session && profile && screen.name === 'home' && (
+            <Home
+              onToggleLang={toggleLang}
+              onSignOut={() => { signOut(); setScreen({ name: 'home' }); }}
+              onRole={() => setScreen({ name: 'jobs' })}
+              role={role}
+            />
           )}
-          {screen.name === 'jobs' && (
+          {session && profile && screen.name === 'jobs' && (
             <JobList
               role={role}
               jobs={jobs}
@@ -95,7 +111,7 @@ export default function App() {
               onBack={() => setScreen({ name: 'home' })}
             />
           )}
-          {screen.name === 'wizard' && (
+          {session && profile && screen.name === 'wizard' && (
             <RequestWizard
               onCancel={() => setScreen({ name: 'jobs' })}
               onDone={(r) => {
@@ -107,7 +123,7 @@ export default function App() {
               }}
             />
           )}
-          {current && (
+          {session && profile && current && (
             <JobDetail
               job={current}
               role={role}
@@ -117,8 +133,8 @@ export default function App() {
               onBack={() => setScreen({ name: 'jobs' })}
             />
           )}
-          {profile && screen.name === 'profile' && (
-            <ProviderProfile provider={profile} onBack={() => setScreen(screen.back)} />
+          {session && profile && provider && screen.name === 'profile' && (
+            <ProviderProfile provider={provider} onBack={() => setScreen(screen.back)} />
           )}
         </View>
         <StatusBar style="dark" />
