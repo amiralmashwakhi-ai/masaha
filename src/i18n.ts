@@ -331,6 +331,8 @@ const en = {
   'directTo': 'Direct request to {n}',
   'directHint': 'Only this surveyor will see your request and send you a quote.',
   'note.directRequest': 'A customer requested a service from you directly',
+  'home': 'Home',
+  'otherServicesLabel': 'Other services you offer',
 };
 
 type Key = keyof typeof en;
@@ -665,6 +667,8 @@ const ar: Record<Key, string> = {
   'directTo': 'طلب مباشر إلى {n}',
   'directHint': 'لن يرى طلبك ويقدّم لك عرض سعر إلا هذا المساح.',
   'note.directRequest': 'طلب مباشر لك من عميل',
+  'home': 'الرئيسية',
+  'otherServicesLabel': 'خدمات أخرى تقدّمها',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

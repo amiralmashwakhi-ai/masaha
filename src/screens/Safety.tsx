@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Linking, ScrollView, View } from 'react-native';
 import * as data from '../data';
 import { Job, Role } from '../types';
-import { Button, Card, colors, Field, H, IconCircle, IconName, OptionRow, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, IconName, OptionRow, P, useLang } from '../ui';
 
 // Report (and optionally block) a person, post or chat. Collapsed to one small link until used.
 export function ReportBlock({ reporterId, userId, postId, chatId, canBlock, onBlocked }: {
@@ -54,7 +54,7 @@ export function Notifications({ onOpenJob, onBack }: { onOpenJob: (id: string) =
           subtitle={[n.service && t(`service.${n.service}`), n.at.slice(0, 16).replace('T', ' ')].filter(Boolean).join(' · ')}
           onPress={n.jobId ? () => onOpenJob(n.jobId!) : undefined} />
       ))}
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }
@@ -254,7 +254,7 @@ export function OperatorPanel({ onOpenJob, onBack }: { onOpenJob: (id: string) =
         </Card>
       ))}
       <View style={{ height: 1, backgroundColor: colors.line, marginVertical: 4 }} />
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }

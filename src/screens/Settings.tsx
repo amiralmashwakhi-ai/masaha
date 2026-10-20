@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { changePassword, Profile } from '../auth';
 import * as data from '../data';
-import { Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
 import { DeleteAccountCard, LicenseCard } from './Safety';
 
 // Brand badges drawn as text so no third-party logo files are bundled.
@@ -130,7 +130,7 @@ export function Settings({ profile, isProvider, onChanged, onSignOut, onBack }: 
       {isProvider && <LicenseCard userId={profile.id} />}
       <Button title={t('signOut')} icon="logout" secondary onPress={onSignOut} />
       <DeleteAccountCard />
-      <Button title={t('back')} secondary onPress={onBack} />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }

@@ -5,11 +5,11 @@ import { autoReleaseAt, correctionNote, eventText, lastCorrectionAt } from '../e
 import { fmt, split } from '../money';
 import { serviceName } from '../services';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
-import { ChatBubble } from './ChatCard';
+import { ChatBubble, chatAvailable } from './ChatCard';
 import { Deliverables } from './Deliverables';
 import { JobSafety } from './Safety';
 import { ReviewList } from './ReviewList';
-import { Button, Card, colors, Field, H, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, P, useLang } from '../ui';
 
 export interface JobActions {
   unsign: (jobId: string) => void;
@@ -43,6 +43,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   const fullySigned = job.signedBy.includes('customer') && job.signedBy.includes('provider');
   const paid = job.milestones.some((m) => m.status !== 'pending');
   const [freshFiles, setFreshFiles] = useState(0);
+  const [chatSignal, setChatSignal] = useState(0);
   // Phone numbers show to both sides once the money is held.
   const [contacts, setContacts] = useState<{ customer?: string; provider?: string } | null>(null);
   const held = job.milestones.some((m) => m.status === 'held' || m.status === 'released') && job.stage !== 'cancelled';
@@ -74,6 +75,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
       <H>{serviceName(job, t)}</H>
       {job.invitedProviderId && <P muted>{t('directTo').replace('{n}', providerOf(job.invitedProviderId)?.name ?? t('provider'))}</P>}
       {!!job.notes && <P muted>{job.notes}</P>}
+      {chatAvailable(job, role) && <Button title={t('openChat')} icon="chat-processing-outline" secondary onPress={() => setChatSignal((n) => n + 1)} />}
       <P muted>{JOB_STAGES.includes(job.stage) ? `${t(`stage.${job.stage}`)} (${JOB_STAGES.indexOf(job.stage) + 1}/${JOB_STAGES.length})` : t(`stage.${job.stage}`)}</P>
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
       {note && (
@@ -215,10 +217,10 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         {job.events.map((e, i) => <P key={i} muted>{`${e.at.slice(0, 16).replace('T', ' ')} · ${t(e.by === 'masaha' ? 'appName' : e.by)} · ${eventText(e, t)}`}</P>)}
       </Card>
       {(job.customerId === userId || job.providerId === userId) && <JobSafety job={job} role={role} onDone={onChanged} onDeleted={() => { onChanged(); onBack(); }} />}
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
       <View style={{ height: 70 }} />
     </ScrollView>
-    <ChatBubble job={job} role={role} userId={userId} providers={providers} />
+    <ChatBubble job={job} role={role} userId={userId} providers={providers} openSignal={chatSignal} />
     </View>
   );
 }

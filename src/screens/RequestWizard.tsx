@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { GOVERNORATES, SERVICES, VISIT_LENGTHS } from '../services';
 import { PlotLocation, ServiceId, ServiceRequest, VisitLength } from '../types';
-import { Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
 
 const emptyLocation: PlotLocation = {
   governorate: '', directorate: '', village: '', basin: '', plotNumber: '',
@@ -37,7 +37,7 @@ export function RequestWizard({ initialService, invited, onDone, onCancel }: {
             onPress={() => setService(sv.id)}
           />
         ))}
-        <Button title={t('back')} onPress={onCancel} secondary />
+        <BackButton onPress={onCancel} />
       </ScrollView>
     );
   }
@@ -122,7 +122,7 @@ export function RequestWizard({ initialService, invited, onDone, onCancel }: {
           })
         }
       />
-      <Button title={t('back')} onPress={() => setService(null)} secondary />
+      <BackButton onPress={() => setService(null)} />
     </ScrollView>
   );
 }

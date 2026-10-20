@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BackHandler, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { loadProfile, Profile, signOut, useSession } from './src/auth';
 import * as data from './src/data';
@@ -133,6 +133,18 @@ export default function App() {
     setScreen({ name: 'profile', id, back: screen });
   };
   const goHome = () => setScreen({ name: 'home' });
+  // Phone back button on screens without their own back step: go home, and leave the app from home.
+  // Registered once at start so each screen's BackButton (registered later) is asked first.
+  const atHome = useRef(true);
+  atHome.current = screen.name === 'home';
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (atHome.current) return false;
+      setScreen({ name: 'home' });
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
   const openAnyJob = async (id: string) => {
     if (!jobs.some((j) => j.id === id)) {
       try { setExtraJob(await data.getJob(id)); } catch { setError(ctx.t('somethingWrong')); return; }
@@ -264,6 +276,7 @@ export default function App() {
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
             signedIn={!!ready}
+            onHome={goHome}
             onProfile={() => (role === 'provider' && me ? openProfile(me.id) : setScreen({ name: 'settings' }))}
             onHistory={() => setScreen({ name: 'history' })}
             onSettings={() => setScreen({ name: 'settings' })}

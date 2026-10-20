@@ -120,20 +120,25 @@ export function ChatCard({ job, role, userId, providers }: { job: Job; role: Rol
 }
 
 // A floating chat button on the job screen; the conversation opens over it.
-export function ChatBubble({ job, role, userId, providers }: { job: Job; role: Role; userId: string; providers: Provider[] }) {
+// Nobody to talk to yet: a customer's request without quotes.
+export const chatAvailable = (job: Job, role: Role) => !(role === 'customer' && !job.providerId && job.quotes.length === 0);
+
+// openSignal: bump it to open the bubble from a button elsewhere on the page.
+export function ChatBubble({ job, role, userId, providers, openSignal }: { job: Job; role: Role; userId: string; providers: Provider[]; openSignal?: number }) {
   const { t, rtl } = useLang();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const show = () => { setOpen(true); setUnread(0); data.markChatRead(job.id).catch(() => {}); };
   useEffect(() => {
     const poll = () => data.chatUnread(job.id).then(setUnread).catch(() => {});
     poll();
     const timer = setInterval(poll, POLL_MS * 4);
     return () => clearInterval(timer);
   }, [job.id]);
+  useEffect(() => { if (openSignal) show(); }, [openSignal]);
   // Nobody to talk to yet: a customer's request without quotes.
-  if (role === 'customer' && !job.providerId && job.quotes.length === 0) return null;
-  const show = () => { setOpen(true); setUnread(0); data.markChatRead(job.id).catch(() => {}); };
+  if (!chatAvailable(job, role)) return null;
   return (
     <>
       <Pressable onPress={show} accessibilityLabel={t('chat')}

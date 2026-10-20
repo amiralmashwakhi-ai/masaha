@@ -67,6 +67,7 @@ export interface Provider {
   experienceYears: number;
   cv: { education: string; experience: string[]; equipment: string[] };
   services: ServiceId[];
+  otherServices?: string; // services outside the app's list, in the surveyor's words
   governorates: string[];
   coverUrl?: string;
   reviews: Review[];

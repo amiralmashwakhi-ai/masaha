@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Provider, ServiceId } from '../types';
-import { Button, Card, Field, H, P, useLang } from '../ui';
+import { BackButton, Button, Card, Field, H, P, useLang } from '../ui';
 
 const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 
@@ -18,6 +18,7 @@ export function EditProvider({ provider, onSave, onBack }: {
   const [experience, setExperience] = useState(provider.cv.experience.join('\n'));
   const [equipment, setEquipment] = useState(provider.cv.equipment.join('\n'));
   const [services, setServices] = useState<ServiceId[]>(provider.services);
+  const [other, setOther] = useState(provider.otherServices ?? '');
   const [govs, setGovs] = useState<string[]>(provider.governorates);
   const [status, setStatus] = useState('');
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
@@ -37,9 +38,10 @@ export function EditProvider({ provider, onSave, onBack }: {
       <Field label={t('equipmentLines')} value={equipment} onChange={setEquipment} multiline />
       <Card>
         <P>{t('servicesOffered')}</P>
-        {SERVICES.filter((sv) => sv.id !== 'other').map((sv) => (
+        {SERVICES.map((sv) => (
           <Button key={sv.id} title={t(`service.${sv.id}`)} onPress={() => setServices(toggle(services, sv.id))} secondary={!services.includes(sv.id)} />
         ))}
+        {services.includes('other') && <Field label={t('otherServicesLabel')} value={other} onChange={setOther} multiline />}
       </Card>
       <Card>
         <P>{t('areasServed')}</P>
@@ -57,7 +59,7 @@ export function EditProvider({ provider, onSave, onBack }: {
               ...provider, name: name.trim() || provider.name, kind, licenseNo: license.trim() || undefined,
               experienceYears: Number(years) || 0,
               cv: { education: education.trim(), experience: lines(experience), equipment: lines(equipment) },
-              services, governorates: govs,
+              services, otherServices: other.trim() || undefined, governorates: govs,
             });
             setStatus(t('saved'));
           } catch {
@@ -66,7 +68,7 @@ export function EditProvider({ provider, onSave, onBack }: {
         }}
       />
       {!!status && <P muted>{status}</P>}
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }

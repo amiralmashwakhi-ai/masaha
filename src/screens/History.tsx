@@ -3,7 +3,7 @@ import { ScrollView, View } from 'react-native';
 import * as data from '../data';
 import { serviceName, SERVICES } from '../services';
 import { Job, Role, ServicePost } from '../types';
-import { Button, Card, colors, H, IconCircle, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, H, IconCircle, P, useLang } from '../ui';
 
 type Item =
   | { kind: 'job'; at: string; job: Job }
@@ -65,7 +65,7 @@ export function History({ role, userId, jobs, onOpenJob, onBack }: {
         );
       })}
       <View style={{ height: 1, backgroundColor: colors.line, marginVertical: 4 }} />
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }

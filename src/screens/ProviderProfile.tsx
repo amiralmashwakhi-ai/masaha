@@ -3,7 +3,7 @@ import { Image, ScrollView } from 'react-native';
 import * as data from '../data';
 import { avgStars } from '../money';
 import { Provider, Role, ServiceId, ServicePost } from '../types';
-import { Button, Card, H, P, useLang } from '../ui';
+import { BackButton, Button, Card, H, P, useLang } from '../ui';
 import { PostCard } from './Posts';
 import { ReportBlock } from './Safety';
 import { ReviewList } from './ReviewList';
@@ -30,6 +30,13 @@ export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onD
       {provider.licenseNo && <P muted>{provider.licenseNo}</P>}
       {!mine && role === 'customer' && onDirect && <Button title={t('requestDirect')} icon="account-arrow-right-outline" onPress={onDirect} />}
       {!provider.verified && !mine && <Card><P small>{`⚠ ${t('unverifiedWarn')}`}</P></Card>}
+      {(provider.services.length > 0 || !!provider.otherServices) && (
+        <Card>
+          <P>{t('servicesOffered')}</P>
+          {provider.services.filter((s) => s !== 'other').map((s) => <P key={s} muted>{`• ${t(`service.${s}`)}`}</P>)}
+          {!!provider.otherServices && provider.services.includes('other') && <P muted>{`• ${provider.otherServices}`}</P>}
+        </Card>
+      )}
       <Card>
         <P>{t('cv')}</P>
         <P muted>{`${t('education')}: ${provider.cv.education}`}</P>
@@ -45,7 +52,7 @@ export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onD
       <P>{`★ ${stars || '-'} (${provider.reviews.length})`}</P>
       <ReviewList reviews={provider.reviews} />
       {!mine && <ReportBlock reporterId={viewerId} userId={provider.id} canBlock onBlocked={onBack} />}
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }

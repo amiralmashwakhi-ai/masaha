@@ -105,7 +105,7 @@ export const releaseMilestone = (jobId: string, key: Milestone['key']) => rpc('r
 interface ProviderRow {
   id: string; kind: Provider['kind']; display_name: string; license_no: string | null; verified: boolean;
   experience_years: number; cv_education: string | null; cv_experience: string[]; cv_equipment: string[];
-  services: ServiceId[]; governorates: string[]; cover_url: string | null;
+  services: ServiceId[]; other_services: string | null; governorates: string[]; cover_url: string | null;
 }
 
 export async function reviewsAbout(subjectId: string): Promise<Review[]> {
@@ -126,7 +126,7 @@ export async function loadProviders(ids: string[]): Promise<Provider[]> {
     id: p.id, name: p.display_name, kind: p.kind, licenseNo: p.license_no ?? undefined, verified: p.verified,
     experienceYears: p.experience_years,
     cv: { education: p.cv_education ?? '', experience: p.cv_experience, equipment: p.cv_equipment },
-    services: p.services, governorates: p.governorates, coverUrl: p.cover_url ?? undefined,
+    services: p.services, otherServices: p.other_services ?? undefined, governorates: p.governorates, coverUrl: p.cover_url ?? undefined,
     reviews: await reviewsAbout(p.id),
   })));
 }
@@ -135,7 +135,7 @@ export async function saveProvider(p: Provider) {
   const { error } = await supabase.from('providers').update({
     display_name: p.name, kind: p.kind, license_no: p.licenseNo || null, experience_years: p.experienceYears,
     cv_education: p.cv.education || null, cv_experience: p.cv.experience, cv_equipment: p.cv.equipment,
-    services: p.services, governorates: p.governorates,
+    services: p.services, other_services: p.services.includes('other') ? p.otherServices?.trim() || null : null, governorates: p.governorates,
   }).eq('id', p.id);
   if (error) throw error;
 }

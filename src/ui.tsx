@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { createContext, useContext } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { createContext, useContext, useEffect, useRef } from 'react';
+import { BackHandler, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lang } from './types';
 
 export type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -125,6 +125,20 @@ export function Button({ title, onPress, secondary, icon, disabled }: {
       <Text style={[s.btnText, { color: fg }]}>{title}</Text>
     </Pressable>
   );
+}
+
+// A screen's way back. On Android the phone's own back button does it, so no button is drawn there.
+// The most recently shown screen wins, because BackHandler calls the latest listener first.
+export function BackButton({ onPress }: { onPress: () => void }) {
+  const { t } = useLang();
+  const latest = useRef(onPress);
+  latest.current = onPress;
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { latest.current(); return true; });
+    return () => sub.remove();
+  }, []);
+  if (Platform.OS === 'android') return null;
+  return <Button title={t('back')} onPress={onPress} secondary />;
 }
 
 export function LinkText({ title, onPress }: { title: string; onPress: () => void }) {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { serviceName, SERVICES } from '../services';
 import { Job, JOB_STAGES, Role } from '../types';
-import { Button, Card, colors, H, IconCircle, matches, P, SearchBox, useLang } from '../ui';
+import { BackButton, Button, Card, colors, H, IconCircle, matches, P, SearchBox, useLang } from '../ui';
 
 function Progress({ stage }: { stage: Job['stage'] }) {
   const { t, rtl } = useLang();
@@ -54,7 +54,7 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
           </Card>
         );
       })}
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }

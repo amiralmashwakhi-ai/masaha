@@ -6,7 +6,7 @@ import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import * as data from '../data';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Attachment, Role, ServiceId, ServicePost } from '../types';
-import { Button, Card, colors, Field, H, IconCircle, matches, OptionRow, P, SearchBox, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, matches, OptionRow, P, SearchBox, useLang } from '../ui';
 import { ReportBlock } from './Safety';
 
 function Attachments({ items }: { items: Attachment[] }) {
@@ -117,7 +117,7 @@ export function PostFeed({ role, userId, onProvider, onRequest, onNewPost, onBac
       {posts === null && <P muted>{t('loading')}</P>}
       {posts !== null && shown.length === 0 && <P muted>{t('noPosts')}</P>}
       {shown.map((p) => <PostCard key={p.id} post={p} role={role} mine={p.providerId === userId} viewerId={userId} onProvider={onProvider} onRequest={onRequest} onChanged={load} />)}
-      <Button title={t('back')} onPress={onBack} secondary />
+      <BackButton onPress={onBack} />
     </ScrollView>
   );
 }
@@ -165,7 +165,7 @@ export function PostEditor({ userId, onDone, onBack }: { userId: string; onDone:
         <H>{t('newPost')}</H>
         <P muted small>{t('pickPostService')}</P>
         {SERVICES.map((sv) => <OptionRow key={sv.id} icon={sv.icon} title={t(`service.${sv.id}`)} onPress={() => setService(sv.id)} />)}
-        <Button title={t('back')} onPress={onBack} secondary />
+        <BackButton onPress={onBack} />
       </ScrollView>
     );
   }
@@ -202,7 +202,7 @@ export function PostEditor({ userId, onDone, onBack }: { userId: string; onDone:
           onDone();
         } catch { setInfo(t('somethingWrong')); } finally { setBusy(false); }
       }} />
-      <Button title={t('back')} onPress={() => setService(null)} secondary />
+      <BackButton onPress={() => setService(null)} />
     </ScrollView>
   );
 }

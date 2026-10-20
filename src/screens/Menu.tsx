@@ -20,8 +20,8 @@ function Item({ icon, title, onPress, right, danger }: {
 }
 
 // The ☰ menu: account items when signed in, plus night mode and language for everyone.
-export function Menu({ open, onClose, signedIn, onProfile, onHistory, onSettings, onOperator, onSignOut }: {
-  open: boolean; onClose: () => void; signedIn: boolean;
+export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, onSettings, onOperator, onSignOut }: {
+  open: boolean; onClose: () => void; signedIn: boolean; onHome: () => void;
   onProfile: () => void; onHistory: () => void; onSettings: () => void; onOperator?: () => void; onSignOut: () => void;
 }) {
   const { t, rtl, dark, toggleDark, toggleLang } = useLang();
@@ -35,6 +35,7 @@ export function Menu({ open, onClose, signedIn, onProfile, onHistory, onSettings
           backgroundColor: colors.card, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 4,
           shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 14, elevation: 8,
         }}>
+          <Item icon="home-outline" title={t('home')} onPress={go(onHome)} />
           {signedIn && (
             <>
               <Item icon="account-circle-outline" title={t('myProfile')} onPress={go(onProfile)} />
