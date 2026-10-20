@@ -103,6 +103,7 @@ export default function App() {
     sendQuote: (id, priceJod, days, scope) => { if (userId) run(() => data.sendQuote(id, userId, priceJod, days, scope))(); },
     acceptQuote: (_id, quoteId) => run(() => data.acceptQuote(quoteId))(),
     sign: (id) => run(() => data.signAgreement(id))(),
+    unsign: (id) => run(() => data.unsignAgreement(id))(),
     payEscrow: (id) => run(() => data.payEscrow(id))(),
     advance: (id) => run(() => data.advanceStage(id))(),
     release: (id, key) => run(() => data.releaseMilestone(id, key))(),

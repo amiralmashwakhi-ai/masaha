@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { GOVERNORATES, SERVICES } from '../services';
-import { PlotLocation, ServiceId, ServiceRequest } from '../types';
+import { GOVERNORATES, SERVICES, VISIT_LENGTHS } from '../services';
+import { PlotLocation, ServiceId, ServiceRequest, VisitLength } from '../types';
 import { Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
 
 const emptyLocation: PlotLocation = {
@@ -17,6 +17,8 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
   const [area, setArea] = useState('');
   const [notes, setNotes] = useState('');
   const [visits, setVisits] = useState(1);
+  const [length, setLength] = useState<VisitLength>('upTo4h');
+  const [withReport, setWithReport] = useState(true);
   const set = (k: keyof PlotLocation) => (v: string) => setLoc({ ...loc, [k]: v });
 
   const info = SERVICES.find((x) => x.id === service);
@@ -38,6 +40,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
     );
   }
 
+  const range = info.perVisit ? VISIT_LENGTHS.find((l) => l.id === length)!.baseJod : info.baseJod;
   return (
     <ScrollView>
       <View style={{ alignItems: 'center', marginBottom: 6 }}><IconCircle name={info.icon} size={56} /></View>
@@ -67,6 +70,21 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
             <Text style={{ fontSize: 22, fontWeight: '700', color: colors.ink, minWidth: 36, textAlign: 'center' }}>{visits}</Text>
             <Pressable onPress={() => setVisits(Math.min(50, visits + 1))} hitSlop={8}><IconCircle name="plus" /></Pressable>
           </View>
+          <View style={{ marginTop: 10 }}>
+            <P>{t('visitLength')}</P>
+            {VISIT_LENGTHS.map((l) => (
+              <OptionRow key={l.id} icon={length === l.id ? 'check-circle' : 'clock-outline'} tone={length === l.id ? 'primary' : 'accent'}
+                title={t(`len.${l.id}`)} subtitle={`${l.baseJod[0]}–${l.baseJod[1]} ${t('jod')} ${t('perVisit')}`} onPress={() => setLength(l.id)} />
+            ))}
+          </View>
+          <View style={{ marginTop: 10 }}>
+            <P>{t('reportQ')}</P>
+            {[true, false].map((r) => (
+              <OptionRow key={String(r)} icon={withReport === r ? 'check-circle' : r ? 'file-document-outline' : 'file-hidden'}
+                tone={withReport === r ? 'primary' : 'accent'} title={r ? t('withReport') : t('withoutReport')}
+                subtitle={r ? t('withReportHint') : undefined} onPress={() => setWithReport(r)} />
+            ))}
+          </View>
         </Card>
       )}
       <Field label={t('notes')} value={notes} onChange={setNotes} />
@@ -75,8 +93,8 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
         {info.docs.map((d) => <P key={d} muted>{`• ${t(`doc.${d}`)}`}</P>)}
       </Card>
       <Card>
-        <P>{`${t('estimate')}: ${info.baseJod[0] * (info.perVisit ? visits : 1)}–${info.baseJod[1] * (info.perVisit ? visits : 1)} ${t('jod')}`}</P>
-        {info.perVisit && <P muted small>{`${info.baseJod[0]}–${info.baseJod[1]} ${t('jod')} ${t('perVisit')} × ${visits}`}</P>}
+        <P>{`${t('estimate')}: ${range[0] * (info.perVisit ? visits : 1)}–${range[1] * (info.perVisit ? visits : 1)} ${t('jod')}`}</P>
+        {info.perVisit && <P muted small>{`${range[0]}–${range[1]} ${t('jod')} ${t('perVisit')} × ${visits}`}</P>}
       </Card>
       <Button
         title={t('submit')}
@@ -87,6 +105,8 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
             location: { ...loc, areaM2: area ? Number(area) : undefined },
             notes,
             visits: info.perVisit ? visits : undefined,
+            visitLength: info.perVisit ? length : undefined,
+            withReport: info.perVisit ? withReport : undefined,
             createdAt: new Date().toISOString(),
             stage: 'requested',
           })

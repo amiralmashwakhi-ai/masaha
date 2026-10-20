@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { split } from '../money';
+import { correctionNote, eventText, lastCorrectionAt } from '../events';
+import { fmt, split } from '../money';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
-import { ChatCard } from './ChatCard';
+import { ChatBubble } from './ChatCard';
+import { Deliverables } from './Deliverables';
 import { JobSafety } from './Safety';
 import { ReviewList } from './ReviewList';
 import { Button, Card, colors, Field, H, P, useLang } from '../ui';
 
 export interface JobActions {
+  unsign: (jobId: string) => void;
   sendQuote: (jobId: string, priceJod: number, days: number, scope: string) => void;
   acceptQuote: (jobId: string, quoteId: string) => void;
   sign: (jobId: string, role: Role) => void;
@@ -37,12 +40,37 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   const providerOf = (id: string) => providers.find((p) => p.id === id);
   const fullySigned = job.signedBy.includes('customer') && job.signedBy.includes('provider');
   const paid = job.milestones.some((m) => m.status !== 'pending');
+  const [freshFiles, setFreshFiles] = useState(0);
+  const needsFiles = !(job.service === 'staking' && job.withReport === false);
+  // A signature can be withdrawn until 3 minutes after both sides signed, and never after payment.
+  const [now, setNow] = useState(Date.now());
+  const withdrawLeft = job.bothSignedAt ? Math.ceil((Date.parse(job.bothSignedAt) + 180000 - now) / 1000) : Infinity;
+  const canUnsign = job.signedBy.includes(role) && !paid && ['quoted', 'agreed'].includes(job.stage) && withdrawLeft > 0;
+  useEffect(() => {
+    if (!job.bothSignedAt || withdrawLeft <= 0) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [job.bothSignedAt, withdrawLeft > 0]);
+  const sinceCorrection = lastCorrectionAt(job.events);
+  const note = ['visitScheduled', 'fieldWork', 'drafting'].includes(job.stage) ? correctionNote(job.events) : undefined;
+  // Staking is quoted per visit; the stored price is the total.
+  const visits = job.service === 'staking' && job.visits ? job.visits : 0;
+  const priceLine = (q: { priceJod: number; days: number }) =>
+    `${fmt(q.priceJod)} ${t('jod')}${visits > 1 ? ` (${fmt(q.priceJod / visits)} × ${visits})` : ''} · ${q.days} ${t('days')}`;
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView>
       <H>{t(`service.${job.service}`)}</H>
       <P muted>{JOB_STAGES.includes(job.stage) ? `${t(`stage.${job.stage}`)} (${JOB_STAGES.indexOf(job.stage) + 1}/${JOB_STAGES.length})` : t(`stage.${job.stage}`)}</P>
-      {!!job.visits && <P>{`${t('visits')}: ${job.visits}`}</P>}
+      {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
+      {note && (
+        <Card>
+          <P>{t('correctionTitle')}</P>
+          <P>{note}</P>
+          <P muted small>{t('correctionHint')}</P>
+        </Card>
+      )}
 
       {!accepted && (
         <Card>
@@ -52,7 +80,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
             const p = providerOf(q.providerId);
             return (
               <View key={q.id} style={{ borderTopWidth: 1, borderColor: colors.line, paddingTop: 8, marginTop: 8 }}>
-                <P>{`${p?.name ?? ''} · ${q.priceJod} ${t('jod')} · ${q.days} ${t('days')}`}</P>
+                <P>{`${p?.name ?? ''} · ${priceLine(q)}`}</P>
                 <P muted>{q.scope}</P>
                 <Button title={t('viewProfile')} onPress={() => onProfile(q.providerId)} secondary />
                 {role === 'customer' && <Button title={t('accept')} onPress={() => actions.acceptQuote(job.id, q.id)} />}
@@ -61,16 +89,17 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
           })}
           {role === 'provider' && job.quotes.length === 0 && (
             <View style={{ marginTop: 12 }}>
-              <Field label={t('price')} value={price} onChange={setPrice} numeric />
+              <Field label={visits ? t('pricePerVisit') : t('price')} value={price} onChange={setPrice} numeric />
+              {!!visits && Number(price) > 0 && <P muted>{`${t('total')}: ${fmt(Number(price) * visits)} ${t('jod')}`}</P>}
               <Field label={t('days')} value={days} onChange={setDays} numeric />
               <Field label={t('scope')} value={scope} onChange={setScope} />
               {Number(price) > 0 && (
-                <P muted>{`${t('commission')}: ${split(Number(price)).commission} · ${t('providerGets')}: ${split(Number(price)).providerGets} ${t('jod')}`}</P>
+                <P muted>{`${t('commission')}: ${fmt(split(Number(price) * (visits || 1)).commission)} · ${t('providerGets')}: ${fmt(split(Number(price) * (visits || 1)).providerGets)} ${t('jod')}`}</P>
               )}
               <Button
                 title={t('sendQuote')}
                 onPress={() => {
-                  if (Number(price) > 0) actions.sendQuote(job.id, Number(price), Number(days) || 1, scope);
+                  if (Number(price) > 0) actions.sendQuote(job.id, Number(price) * (visits || 1), Number(days) || 1, scope);
                   setPrice(''); setDays(''); setScope('');
                 }}
               />
@@ -83,11 +112,17 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         <Card>
           <P>{t('agreement')}</P>
           <P muted>{t('agreementBody')}</P>
-          <P>{`${providerOf(accepted.providerId)?.name} · ${accepted.priceJod} ${t('jod')} · ${accepted.days} ${t('days')}`}</P>
+          <P>{`${providerOf(accepted.providerId)?.name} · ${priceLine(accepted)}`}</P>
           <P muted>{accepted.scope}</P>
-          <P muted>{`${t('commission')}: ${split(accepted.priceJod).commission} · ${t('providerGets')}: ${split(accepted.priceJod).providerGets} ${t('jod')}`}</P>
+          <P muted>{`${t('commission')}: ${fmt(split(accepted.priceJod).commission)} · ${t('providerGets')}: ${fmt(split(accepted.priceJod).providerGets)} ${t('jod')}`}</P>
           <P muted>{`${t('signedBy')}: ${job.signedBy.map((r) => t(r)).join('، ') || '-'}`}</P>
           {!job.signedBy.includes(role) && <Button title={t('sign')} onPress={() => actions.sign(job.id, role)} />}
+          {canUnsign && (
+            <>
+              <Button title={t('unsign')} icon="undo" secondary onPress={() => actions.unsign(job.id)} />
+              {Number.isFinite(withdrawLeft) && <P muted small>{t('unsignLeft').replace('{s}', String(withdrawLeft))}</P>}
+            </>
+          )}
         </Card>
       )}
 
@@ -96,7 +131,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
           <P>{t('escrow')}</P>
           {job.milestones.map((m) => (
             <View key={m.key} style={{ marginTop: 6 }}>
-              <P>{`${t(`ms.${m.key}`)}: ${Math.round(accepted.priceJod * m.share * 1000) / 1000} ${t('jod')}`}</P>
+              <P>{`${t(`ms.${m.key}`)}: ${fmt(accepted.priceJod * m.share)} ${t('jod')}`}</P>
               <P muted>{t(`mss.${m.status}`)}</P>
               {role === 'customer' && m.status === 'held' && (
                 <Button title={t('release')} onPress={() => actions.release(job.id, m.key)} secondary />
@@ -104,16 +139,22 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
             </View>
           ))}
           {role === 'customer' && !paid && (
-            <Button title={`${t('payEscrow')} (${accepted.priceJod} ${t('jod')})`} onPress={() => actions.payEscrow(job.id)} />
+            <Button title={`${t('payEscrow')} (${fmt(accepted.priceJod)} ${t('jod')})`} onPress={() => actions.payEscrow(job.id)} />
           )}
         </Card>
       )}
 
+      {accepted && needsFiles && <Deliverables job={job} role={role} userId={userId} since={sinceCorrection} onCount={setFreshFiles} />}
+
       {role === 'provider' && accepted && (job.stage === 'visitScheduled' || job.stage === 'drafting') && (
-        <Button
-          title={job.stage === 'visitScheduled' ? t('markFieldWork') : t('markSubmitted')}
-          onPress={() => actions.advance(job.id)}
-        />
+        <>
+          <Button
+            title={job.stage === 'visitScheduled' ? t('markFieldWork') : t('markSubmitted')}
+            disabled={job.stage === 'drafting' && needsFiles && freshFiles === 0}
+            onPress={() => actions.advance(job.id)}
+          />
+          {job.stage === 'drafting' && needsFiles && freshFiles === 0 && <P muted small>{t('needDeliverables')}</P>}
+        </>
       )}
 
       {role === 'provider' && (
@@ -145,14 +186,15 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         </Card>
       )}
 
-      <ChatCard job={job} role={role} userId={userId} providers={providers} />
-
       <Card>
         <P>{t('record')}</P>
-        {job.events.map((e, i) => <P key={i} muted>{`${e.at.slice(0, 16).replace('T', ' ')} · ${t(e.by)} · ${e.text}`}</P>)}
+        {job.events.map((e, i) => <P key={i} muted>{`${e.at.slice(0, 16).replace('T', ' ')} · ${t(e.by === 'masaha' ? 'appName' : e.by)} · ${eventText(e, t)}`}</P>)}
       </Card>
-      {(job.customerId === userId || job.providerId === userId) && <JobSafety job={job} role={role} onDone={onChanged} />}
+      {(job.customerId === userId || job.providerId === userId) && <JobSafety job={job} role={role} onDone={onChanged} onDeleted={() => { onChanged(); onBack(); }} />}
       <Button title={t('back')} onPress={onBack} secondary />
+      <View style={{ height: 70 }} />
     </ScrollView>
+    <ChatBubble job={job} role={role} userId={userId} providers={providers} />
+    </View>
   );
 }

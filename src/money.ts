@@ -10,6 +10,9 @@ export const DEFAULT_MILESTONES: Milestone[] = [
 
 export const round = (n: number) => Math.round(n * 1000) / 1000; // JOD has 3 decimals (fils)
 
+// Amounts shown without trailing zeros: 250, 87.5.
+export const fmt = (n: number) => String(round(n));
+
 export function split(priceJod: number) {
   const commission = round(priceJod * COMMISSION_RATE);
   return { customerPays: priceJod, commission, providerGets: round(priceJod - commission) };

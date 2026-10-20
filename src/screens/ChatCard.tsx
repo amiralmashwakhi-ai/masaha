@@ -1,5 +1,7 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as data from '../data';
 import { Job, Provider, Role } from '../types';
 import { Button, Card, colors, Field, IconCircle, P, useLang } from '../ui';
@@ -113,5 +115,54 @@ export function ChatCard({ job, role, userId, providers }: { job: Job; role: Rol
       })}
       {!!error && <P small>{error}</P>}
     </Card>
+  );
+}
+
+// A floating chat button on the job screen; the conversation opens over it.
+export function ChatBubble({ job, role, userId, providers }: { job: Job; role: Role; userId: string; providers: Provider[] }) {
+  const { t, rtl } = useLang();
+  const insets = useSafeAreaInsets();
+  const [open, setOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    const poll = () => data.chatUnread(job.id).then(setUnread).catch(() => {});
+    poll();
+    const timer = setInterval(poll, POLL_MS * 4);
+    return () => clearInterval(timer);
+  }, [job.id]);
+  // Nobody to talk to yet: a customer's request without quotes.
+  if (role === 'customer' && !job.providerId && job.quotes.length === 0) return null;
+  const show = () => { setOpen(true); setUnread(0); data.markChatRead(job.id).catch(() => {}); };
+  return (
+    <>
+      <Pressable onPress={show} accessibilityLabel={t('chat')}
+        style={{ position: 'absolute', bottom: 12, [rtl ? 'left' : 'right']: 4, width: 58, height: 58, borderRadius: 29,
+          backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+          shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 6 }}>
+        <MaterialCommunityIcons name="chat-processing" size={28} color={colors.primaryInk} />
+        {unread > 0 && (
+          <View style={{ position: 'absolute', top: 2, right: 2, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5,
+            backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{unread > 9 ? '9+' : unread}</Text>
+          </View>
+        )}
+      </Pressable>
+      <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(20,30,30,0.35)' }}>
+          <View style={{ maxHeight: '85%', backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            paddingHorizontal: 16, paddingTop: 10, paddingBottom: insets.bottom + 10 }}>
+            <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.ink }}>{`${t('chat')} · ${t(`service.${job.service}`)}`}</Text>
+              <Pressable onPress={() => setOpen(false)} hitSlop={10} accessibilityLabel={t('closeChatBubble')}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.primary} />
+              </Pressable>
+            </View>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <ChatCard job={job} role={role} userId={userId} providers={providers} />
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }

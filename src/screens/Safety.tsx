@@ -60,21 +60,32 @@ export function Notifications({ onOpenJob, onBack }: { onOpenJob: (id: string) =
 }
 
 // Cancel (before payment) or dispute (after payment) a job.
-export function JobSafety({ job, role, onDone }: { job: Job; role: Role; onDone: () => void }) {
+export function JobSafety({ job, role, onDone, onDeleted }: { job: Job; role: Role; onDone: () => void; onDeleted: () => void }) {
   const { t } = useLang();
-  const [mode, setMode] = useState<'none' | 'cancel' | 'dispute'>('none');
+  const [mode, setMode] = useState<'none' | 'cancel' | 'dispute' | 'delete'>('none');
   const [reason, setReason] = useState('');
   const [err, setErr] = useState('');
   const canCancel = role === 'customer' && ['requested', 'quoted', 'agreed'].includes(job.stage);
   const canDispute = ['visitScheduled', 'fieldWork', 'drafting', 'submitted'].includes(job.stage);
+  const canDelete = role === 'customer' && ['requested', 'quoted', 'cancelled'].includes(job.stage);
   const act = async (fn: () => Promise<unknown>) => {
     try { await fn(); setMode('none'); onDone(); } catch { setErr(t('somethingWrong')); }
   };
   if (job.stage === 'disputed') return <Card><P>{t('disputeOpen')}</P><P muted small>{t('disputeOpenHint')}</P></Card>;
-  if (!canCancel && !canDispute) return null;
+  if (!canCancel && !canDispute && !canDelete) return null;
   return (
     <Card>
       {mode === 'none' && canCancel && <Button title={t('cancelRequest')} icon="close-circle-outline" secondary onPress={() => setMode('cancel')} />}
+      {mode === 'none' && canDelete && <Button title={t('deleteRequest')} icon="delete-outline" secondary onPress={() => setMode('delete')} />}
+      {mode === 'delete' && (
+        <>
+          <P>{t('deleteRequestConfirm')}</P>
+          <Button title={t('yesDelete')} onPress={async () => {
+            try { await data.deleteJob(job.id); onDeleted(); } catch { setErr(t('somethingWrong')); }
+          }} />
+          <Button title={t('back')} secondary onPress={() => setMode('none')} />
+        </>
+      )}
       {mode === 'none' && canDispute && <Button title={t('openDispute')} icon="scale-balance" secondary onPress={() => setMode('dispute')} />}
       {mode === 'cancel' && (
         <>
@@ -209,7 +220,10 @@ export function OperatorPanel({ onOpenJob, onBack }: { onOpenJob: (id: string) =
           <P>{d.service ? t(`service.${d.service}`) : ''}</P>
           <P muted small>{`${d.at.slice(0, 10)} · ${d.reason}`}</P>
           <Button title={t('op.openJob')} secondary onPress={() => onOpenJob(d.jobId)} />
-          <Field label={t('op.note')} value={note} onChange={setNote} />
+          <P muted small>{t('op.checkFiles')}</P>
+          <Field label={t('op.note')} value={note} onChange={setNote} multiline />
+          <P muted small>{t('op.correctionHint')}</P>
+          <Button title={t('op.correction')} icon="wrench-outline" disabled={!note.trim()} onPress={act(() => data.requestCorrection(d.id, note))} />
           <Button title={t('op.refund')} onPress={act(() => data.resolveDispute(d.id, true, note))} />
           <Button title={t('op.release')} secondary onPress={act(() => data.resolveDispute(d.id, false, note))} />
         </Card>

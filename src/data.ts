@@ -6,7 +6,7 @@ import { Attachment, Job, JobEvent, Milestone, Provider, Review, Role, ServiceId
 interface JobRow {
   id: string; customer_id: string; service: ServiceId; governorate: string; directorate: string | null;
   village: string | null; basin: string | null; plot_number: string | null; area_m2: number | null;
-  notes: string | null; visits: number | null; stage: Job['stage']; accepted_quote_id: string | null; created_at: string;
+  notes: string | null; visits: number | null; visit_length: Job['visitLength'] | null; with_report: boolean | null; stage: Job['stage']; accepted_quote_id: string | null; created_at: string;
   quotes: { id: string; provider_id: string; price_fils: number; days: number; scope: string }[];
   agreements: { customer_signed_at: string | null; provider_signed_at: string | null } | null;
   escrow_milestones: { key: Milestone['key']; share: number; status: Milestone['status'] }[];
@@ -32,17 +32,25 @@ function toJob(r: JobRow): Job {
     },
     notes: r.notes ?? '',
     visits: r.visits ?? undefined,
+    visitLength: r.visit_length ?? undefined,
+    withReport: r.with_report ?? undefined,
     createdAt: r.created_at,
     stage: r.stage,
     acceptedQuoteId: r.accepted_quote_id ?? undefined,
     quotes: r.quotes.map((q) => ({ id: q.id, providerId: q.provider_id, priceJod: q.price_fils / 1000, days: q.days, scope: q.scope })),
     signedBy,
+    bothSignedAt: r.agreements?.customer_signed_at && r.agreements?.provider_signed_at
+      ? [r.agreements.customer_signed_at, r.agreements.provider_signed_at].sort()[1] : undefined,
     milestones: r.escrow_milestones.length
       ? DEFAULT_MILESTONES.map((d) => ({ ...d, ...r.escrow_milestones.find((m) => m.key === d.key) }))
       : DEFAULT_MILESTONES,
     events: [...r.job_events]
       .sort((a, b) => a.at.localeCompare(b.at))
-      .map((e) => ({ at: e.at, by: e.actor_id === r.customer_id ? 'customer' : 'provider', kind: e.kind, text: e.body })),
+      .map((e) => ({
+        at: e.at, kind: e.kind, text: e.body,
+        // Anyone other than the two sides is Masaha's office (e.g. settling a dispute).
+        by: e.actor_id === r.customer_id ? 'customer' : e.kind === 'quote' || e.actor_id === providerId ? 'provider' : 'masaha',
+      })),
     reviews: r.reviews.map((v) => ({ by: v.author_role, stars: v.stars, text: v.body ?? '' })),
     providerId,
   };
@@ -50,7 +58,7 @@ function toJob(r: JobRow): Job {
 
 // RLS returns a customer's own jobs, or for a provider the open feed plus jobs they won.
 export async function listJobs(role: Role, userId: string) {
-  let q = supabase.from('jobs').select(JOB_SELECT).order('created_at', { ascending: false });
+  let q = supabase.from('jobs').select(JOB_SELECT).is('deleted_at', null).order('created_at', { ascending: false });
   if (role === 'customer') q = q.eq('customer_id', userId);
   const { data, error } = await q;
   if (error) throw error;
@@ -68,7 +76,7 @@ export async function createJob(userId: string, r: ServiceRequest) {
     customer_id: userId, service: r.service, governorate: r.location.governorate,
     directorate: r.location.directorate || null, village: r.location.village || null,
     basin: r.location.basin || null, plot_number: r.location.plotNumber || null,
-    area_m2: r.location.areaM2 ?? null, notes: r.notes || null, visits: r.visits ?? null,
+    area_m2: r.location.areaM2 ?? null, notes: r.notes || null, visits: r.visits ?? null, visit_length: r.visitLength ?? null, with_report: r.withReport ?? null,
   });
   if (error) throw error;
 }
@@ -322,6 +330,8 @@ export async function unblock(blockedId: string) {
 }
 
 // Cancel before payment; dispute after payment (money stays held until the operator decides).
+export const deleteJob = (jobId: string) => rpc('delete_job', { p_job: jobId });
+export const unsignAgreement = (jobId: string) => rpc('unsign_agreement', { p_job: jobId });
 export const cancelJob = (jobId: string) => rpc('cancel_job', { p_job: jobId });
 export const openDispute = (jobId: string, reason: string) => rpc('open_dispute', { p_job: jobId, p_reason: reason });
 
@@ -388,5 +398,40 @@ export async function openDisputes(): Promise<OpenDispute[]> {
   return (data as unknown as { id: string; job_id: string; reason: string; opened_at: string; jobs: { service: ServiceId } | null }[])
     .map((d) => ({ id: d.id, jobId: d.job_id, reason: d.reason, at: d.opened_at, service: d.jobs?.service }));
 }
+export const requestCorrection = (id: string, note: string) => rpc('request_correction', { p_dispute: id, p_note: note });
+
+// Deliverables: signed and stamped files, read through short-lived links.
+export interface JobFile { id: string; name: string; mime: string; at: string; url?: string }
+export async function listJobFiles(jobId: string): Promise<JobFile[]> {
+  const { data, error } = await supabase.from('job_files').select('id, path, name, mime, created_at')
+    .eq('job_id', jobId).order('created_at');
+  if (error) throw error;
+  const signed = data.length
+    ? (await supabase.storage.from('deliverables').createSignedUrls(data.map((f) => f.path), 600)).data ?? []
+    : [];
+  return data.map((f, i) => ({ id: f.id, name: f.name, mime: f.mime, at: f.created_at, url: signed[i]?.signedUrl ?? undefined }));
+}
+
+export async function uploadDeliverable(jobId: string, userId: string, uri: string, name: string, mime: string) {
+  const path = `${jobId}/${Date.now()}-${name.replace(/[^\w.-]/g, '_')}`;
+  const body = await (await fetch(uri)).arrayBuffer();
+  const up = await supabase.storage.from('deliverables').upload(path, body, { contentType: mime });
+  if (up.error) throw up.error;
+  const { error } = await supabase.from('job_files').insert({ job_id: jobId, uploader_id: userId, path, name, mime, signed_stamped: true });
+  if (error) throw error;
+}
+
+// Chat activity on one job, for the bubble's badge.
+const CHAT_KINDS = ['chatRequest', 'chatAccepted', 'chatMessage'];
+export async function chatUnread(jobId: string) {
+  const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true })
+    .eq('job_id', jobId).in('kind', CHAT_KINDS).is('read_at', null);
+  return count ?? 0;
+}
+export async function markChatRead(jobId: string) {
+  await supabase.from('notifications').update({ read_at: new Date().toISOString() })
+    .eq('job_id', jobId).in('kind', CHAT_KINDS).is('read_at', null);
+}
+
 export const resolveDispute = (id: string, refund: boolean, note: string) =>
   rpc('resolve_dispute', { p_dispute: id, p_refund: refund, p_note: note });

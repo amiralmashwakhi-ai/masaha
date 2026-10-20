@@ -15,9 +15,9 @@ export function History({ role, userId, jobs, onOpenJob, onBack }: {
 }) {
   const { t, rtl } = useLang();
   const [posts, setPosts] = useState<ServicePost[]>([]);
-  useEffect(() => {
-    if (role === 'provider') data.listPosts({ providerId: userId }).then(setPosts).catch(() => {});
-  }, [role, userId]);
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const loadPosts = () => { if (role === 'provider') data.listPosts({ providerId: userId }).then(setPosts).catch(() => {}); };
+  useEffect(loadPosts, [role, userId]);
 
   const myJobs = role === 'customer' ? jobs : jobs.filter((j) => j.quotes.some((q) => q.providerId === userId));
   const items: Item[] = [
@@ -54,6 +54,13 @@ export function History({ role, userId, jobs, onOpenJob, onBack }: {
                 </P>
               </View>
             </View>
+            {it.kind === 'post' && (confirm === it.post.id
+              ? <>
+                  <P>{t('deletePostConfirm')}</P>
+                  <Button title={t('yesDelete')} onPress={async () => { await data.deletePost(it.post.id).catch(() => {}); setConfirm(null); loadPosts(); }} />
+                  <Button title={t('back')} secondary onPress={() => setConfirm(null)} />
+                </>
+              : <Button title={t('deletePost')} icon="delete-outline" secondary onPress={() => setConfirm(it.post.id)} />)}
           </Card>
         );
       })}

@@ -42,6 +42,7 @@ export function PostCard({ post, role, mine, viewerId, onProvider, onRequest, on
   const { t, rtl } = useLang();
   const icon = SERVICES.find((x) => x.id === post.service)?.icon ?? 'map-marker';
   const act = (fn: () => Promise<unknown>) => async () => { try { await fn(); } finally { onChanged?.(); } };
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <Card>
       <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 }}>
@@ -67,7 +68,13 @@ export function PostCard({ post, role, mine, viewerId, onProvider, onRequest, on
         <>
           {!post.active && <P muted small>{t('postHidden')}</P>}
           <Button title={post.active ? t('hidePost') : t('showPost')} secondary onPress={act(() => data.setPostActive(post.id, !post.active))} />
-          <Button title={t('deletePost')} secondary onPress={act(() => data.deletePost(post.id))} />
+          {confirmDelete
+            ? <>
+                <P>{t('deletePostConfirm')}</P>
+                <Button title={t('yesDelete')} onPress={act(() => data.deletePost(post.id))} />
+                <Button title={t('back')} secondary onPress={() => setConfirmDelete(false)} />
+              </>
+            : <Button title={t('deletePost')} icon="delete-outline" secondary onPress={() => setConfirmDelete(true)} />}
         </>
       )}
       {!mine && viewerId && <ReportBlock reporterId={viewerId} userId={post.providerId} postId={post.id} canBlock onBlocked={onChanged} />}

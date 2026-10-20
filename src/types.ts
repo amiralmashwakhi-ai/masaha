@@ -25,12 +25,16 @@ export interface PlotLocation {
   areaM2?: number;
 }
 
+export type VisitLength = 'upTo2h' | 'upTo4h' | 'fullDay';
+
 export interface ServiceRequest {
   id: string;
   service: ServiceId;
   location: PlotLocation;
   notes: string;
   visits?: number; // construction staking only
+  visitLength?: VisitLength;
+  withReport?: boolean; // staking: written report or not
   createdAt: string;
   stage: JobStage;
 }
@@ -38,7 +42,7 @@ export interface ServiceRequest {
 // One entry per action on a job; this log is what both sides rely on in a dispute.
 export interface JobEvent {
   at: string;
-  by: Role;
+  by: Role | 'masaha';
   kind: 'message' | 'quote' | 'changeOrder' | 'stage' | 'file';
   text: string;
 }
@@ -90,6 +94,7 @@ export interface Job extends ServiceRequest {
   quotes: Quote[];
   acceptedQuoteId?: string;
   signedBy: Role[];
+  bothSignedAt?: string; // signatures can be withdrawn for 3 minutes after this
   milestones: Milestone[];
   events: JobEvent[];
 }
