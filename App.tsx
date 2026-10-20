@@ -7,6 +7,7 @@ import { loadProfile, Profile, signOut, useSession } from './src/auth';
 import * as data from './src/data';
 import { applyDirection, makeT } from './src/i18n';
 import { EditProvider } from './src/screens/EditProvider';
+import { AssistantBubble } from './src/screens/Assistant';
 import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
 import { Menu } from './src/screens/Menu';
@@ -223,6 +224,7 @@ export default function App() {
               />
             )}
           </View>
+          {ready && <AssistantBubble />}
           <Menu
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
