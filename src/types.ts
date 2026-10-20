@@ -80,6 +80,8 @@ export interface Milestone {
 }
 
 export interface Job extends ServiceRequest {
+  // Reviews left on this job, one per side.
+  reviews: { by: Role; stars: Review['stars']; text: string }[];
   quotes: Quote[];
   acceptedQuoteId?: string;
   signedBy: Role[];

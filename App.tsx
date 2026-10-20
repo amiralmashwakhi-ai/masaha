@@ -11,7 +11,7 @@ import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
 import { ProviderProfile } from './src/screens/ProviderProfile';
 import { RequestWizard } from './src/screens/RequestWizard';
-import { SEED_PROVIDERS } from './src/seed';
+import { SEED_CUSTOMER_REVIEWS, SEED_PROVIDERS } from './src/seed';
 import { Job, JobEvent, Lang, Role } from './src/types';
 import { colors, LangCtx } from './src/ui';
 
@@ -83,6 +83,8 @@ export default function App() {
           milestones: x.milestones.map((y) => (y.key === key ? { ...y, status: 'released' } : y)),
         })));
     },
+    review: (id, by, stars, text) =>
+      update(id, by, 'message', `review ${stars}★`, (j) => ({ ...j, reviews: [...j.reviews, { by, stars, text }] })),
   };
 
   const current = screen.name === 'job' ? jobs.find((j) => j.id === screen.id) : undefined;
@@ -116,7 +118,7 @@ export default function App() {
               onCancel={() => setScreen({ name: 'jobs' })}
               onDone={(r) => {
                 setJobs([{
-                  ...r, quotes: [], signedBy: [], milestones: DEFAULT_MILESTONES,
+                  ...r, quotes: [], reviews: [], signedBy: [], milestones: DEFAULT_MILESTONES,
                   events: [{ at: r.createdAt, by: 'customer', kind: 'stage', text: 'request created' }],
                 }, ...jobs]);
                 setScreen({ name: 'jobs' });
@@ -128,6 +130,7 @@ export default function App() {
               job={current}
               role={role}
               providers={SEED_PROVIDERS}
+              customerReviews={SEED_CUSTOMER_REVIEWS}
               actions={actions}
               onProfile={(id) => setScreen({ name: 'profile', id, back: screen })}
               onBack={() => setScreen({ name: 'jobs' })}

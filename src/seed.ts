@@ -1,4 +1,4 @@
-import { Provider } from './types';
+import { Provider, Review } from './types';
 
 // Sample providers for the prototype only.
 export const SEED_PROVIDERS: Provider[] = [
@@ -28,4 +28,9 @@ export const SEED_PROVIDERS: Provider[] = [
     governorates: ['irbid', 'ajloun', 'jerash'],
     reviews: [],
   },
+];
+
+// Reviews providers left about the prototype customer on earlier jobs.
+export const SEED_CUSTOMER_REVIEWS: Review[] = [
+  { by: 'مكتب النخبة للمساحة', stars: 5, text: 'On site on time, documents ready, paid promptly.', jobService: 'plot', at: '2026-07-10' },
 ];

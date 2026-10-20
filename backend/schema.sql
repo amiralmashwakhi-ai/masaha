@@ -103,10 +103,13 @@ create table job_events (
   at timestamptz not null default now()
 );
 
+-- Two-way: customers review providers and providers review customers, once per job each.
 create table reviews (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references jobs(id) on delete cascade,
   author_id uuid not null references profiles(id),
+  author_role user_role not null default 'customer',
+  author_name text,
   subject_id uuid not null references profiles(id),
   stars int not null check (stars between 1 and 5),
   body text,
@@ -189,8 +192,24 @@ create policy "events party insert" on job_events for insert to authenticated
 
 create policy "reviews public read" on reviews for select to authenticated using (true);
 create policy "reviews party insert" on reviews for insert to authenticated
-  with check (author_id = (select auth.uid()) and subject_id <> author_id and public.is_job_party(job_id)
-    and exists (select 1 from jobs where jobs.id = job_id and jobs.stage = 'done'));
+  with check (
+    author_id = (select auth.uid())
+    and exists (
+      select 1 from jobs j join quotes q on q.id = j.accepted_quote_id
+      where j.id = reviews.job_id and j.stage = 'done'
+        and ((j.customer_id = reviews.author_id and q.provider_id = reviews.subject_id and reviews.author_role = 'customer')
+          or (q.provider_id = reviews.author_id and j.customer_id = reviews.subject_id and reviews.author_role = 'provider'))
+    )
+  );
+
+create view rating_summary with (security_invoker = true) as
+  select subject_id,
+         case when author_role = 'customer' then 'provider' else 'customer' end as subject_role,
+         round(avg(stars)::numeric, 2) as avg_stars,
+         count(*) as review_count
+  from reviews group by subject_id, author_role;
+revoke all on rating_summary from anon;
+grant select on rating_summary to authenticated;
 
 create policy "disputes party read" on disputes for select to authenticated using (public.is_job_party(job_id));
 create policy "disputes party insert" on disputes for insert to authenticated

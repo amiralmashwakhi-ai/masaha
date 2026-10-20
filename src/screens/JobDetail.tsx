@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { split } from '../money';
-import { Job, JOB_STAGES, Provider, Role } from '../types';
+import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
+import { ReviewList } from './ReviewList';
 import { Button, Card, colors, Field, H, P, useLang } from '../ui';
 
 export interface JobActions {
@@ -10,16 +11,21 @@ export interface JobActions {
   sign: (jobId: string, role: Role) => void;
   payEscrow: (jobId: string) => void;
   release: (jobId: string, key: 'fieldWork' | 'delivery') => void;
+  review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, providers, actions, onProfile, onBack }: {
-  job: Job; role: Role; providers: Provider[]; actions: JobActions;
+export function JobDetail({ job, role, providers, customerReviews, actions, onProfile, onBack }: {
+  job: Job; role: Role; providers: Provider[]; customerReviews: Review[]; actions: JobActions;
   onProfile: (id: string) => void; onBack: () => void;
 }) {
   const { t } = useLang();
   const [price, setPrice] = useState('');
   const [days, setDays] = useState('');
   const [scope, setScope] = useState('');
+  const [stars, setStars] = useState<1 | 2 | 3 | 4 | 5>(5);
+  const [reviewText, setReviewText] = useState('');
+  const myReview = job.reviews.find((r) => r.by === role);
+  const theirReview = job.reviews.find((r) => r.by !== role);
   const accepted = job.quotes.find((q) => q.id === job.acceptedQuoteId);
   const providerOf = (id: string) => providers.find((p) => p.id === id);
   const fullySigned = job.signedBy.includes('customer') && job.signedBy.includes('provider');
@@ -92,6 +98,35 @@ export function JobDetail({ job, role, providers, actions, onProfile, onBack }: 
           {role === 'customer' && !paid && (
             <Button title={`${t('payEscrow')} (${accepted.priceJod} ${t('jod')})`} onPress={() => actions.payEscrow(job.id)} />
           )}
+        </Card>
+      )}
+
+      {role === 'provider' && (
+        <Card>
+          <P>{t('customerRating')}</P>
+          <ReviewList reviews={customerReviews} />
+        </Card>
+      )}
+
+      {job.stage === 'done' && accepted && (
+        <Card>
+          <P>{role === 'customer' ? t('rateProvider') : t('rateCustomer')}</P>
+          {myReview ? (
+            <P muted>{`${'★'.repeat(myReview.stars)} ${myReview.text}`}</P>
+          ) : (
+            <>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 8 }}>
+                {([1, 2, 3, 4, 5] as const).map((n) => (
+                  <Text key={n} onPress={() => setStars(n)} style={{ fontSize: 32, color: n <= stars ? colors.star : colors.line, marginHorizontal: 4 }}>
+                    ★
+                  </Text>
+                ))}
+              </View>
+              <Field label={t('reviewText')} value={reviewText} onChange={setReviewText} />
+              <Button title={t('submitReview')} onPress={() => actions.review(job.id, role, stars, reviewText.trim())} />
+            </>
+          )}
+          {theirReview && <P muted>{`${t('theyRatedYou')}: ${'★'.repeat(theirReview.stars)} ${theirReview.text}`}</P>}
         </Card>
       )}
 

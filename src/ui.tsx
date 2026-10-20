@@ -2,9 +2,17 @@ import React, { createContext, useContext } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lang } from './types';
 
+// Soft, low-contrast palette: warm off-white background, muted sage-teal accent, no pure black.
 export const colors = {
-  bg: '#F6F7F4', card: '#FFFFFF', ink: '#1C2B26', muted: '#5E6B66',
-  primary: '#1F6F5C', primaryInk: '#FFFFFF', line: '#DDE2DE', done: '#1F6F5C',
+  bg: '#F5F3EE', card: '#FFFFFF', ink: '#33413C', muted: '#7A8782',
+  primary: '#4F8F80', primaryInk: '#FFFFFF', primarySoft: '#E6F0ED',
+  line: '#E6E2DA', done: '#4F8F80', star: '#E3B04B',
+};
+
+export const radius = { card: 20, button: 16, input: 14 };
+
+const shadow = {
+  shadowColor: '#5B5040', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2,
 };
 
 interface Ctx { lang: Lang; t: (k: string) => string; rtl: boolean }
@@ -53,13 +61,13 @@ export function Field({ label, value, onChange, numeric, secure }: {
 }
 
 const s = StyleSheet.create({
-  h: { fontSize: 22, fontWeight: '700', color: colors.ink, marginBottom: 8 },
-  p: { fontSize: 15, color: colors.ink, lineHeight: 22 },
+  h: { fontSize: 24, fontWeight: '700', color: colors.ink, marginBottom: 10 },
+  p: { fontSize: 15, color: colors.ink, lineHeight: 24 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
-  btn: { backgroundColor: colors.primary, padding: 14, borderRadius: 10, alignItems: 'center', marginVertical: 6 },
-  btn2: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary },
+  btn: { backgroundColor: colors.primary, paddingVertical: 15, paddingHorizontal: 18, borderRadius: radius.button, alignItems: 'center', marginVertical: 6 },
+  btn2: { backgroundColor: colors.primarySoft },
   btnText: { color: colors.primaryInk, fontSize: 16, fontWeight: '600' },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.line },
-  label: { fontSize: 13, color: colors.muted, marginBottom: 4 },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 10, fontSize: 15 },
+  card: { backgroundColor: colors.card, borderRadius: radius.card, padding: 18, marginBottom: 14, ...shadow },
+  label: { fontSize: 13, color: colors.muted, marginBottom: 6 },
+  input: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.input, paddingVertical: 12, paddingHorizontal: 14, fontSize: 15, color: colors.ink },
 });
