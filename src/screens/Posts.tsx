@@ -6,7 +6,7 @@ import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import * as data from '../data';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Attachment, Role, ServiceId, ServicePost } from '../types';
-import { BackButton, Button, Card, colors, Field, H, IconCircle, matches, OptionRow, P, SearchBox, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, Chips, matches, OptionRow, P, SearchWithFilters, useLang } from '../ui';
 import { ReportBlock } from './Safety';
 
 function Attachments({ items }: { items: Attachment[] }) {
@@ -91,29 +91,29 @@ export function PostFeed({ role, userId, onProvider, onRequest, onNewPost, onBac
   const [filter, setFilter] = useState<ServiceId | null>(null);
   const [blocked, setBlocked] = useState<string[]>([]);
   const [query, setQuery] = useState('');
+  const [gov, setGov] = useState<string | null>(null);
+  const [sort, setSort] = useState<'new' | 'priceLow' | 'priceHigh'>('new');
   const load = () => {
     data.listPosts().then(setPosts).catch(() => setPosts([]));
     data.listBlocked().then(setBlocked).catch(() => {});
   };
   useEffect(load, []);
-  const shown = (posts ?? []).filter((p) => (!filter || p.service === filter) && !blocked.includes(p.providerId)
-    && matches(query, p.title, p.body, p.providerName, t(`service.${p.service}`), p.governorate && t(`gov.${p.governorate}`)));
+  const price = (p: ServicePost) => p.priceFromJod ?? (sort === 'priceLow' ? Infinity : -Infinity);
+  const shown = (posts ?? []).filter((p) => (!filter || p.service === filter) && (!gov || p.governorate === gov) && !blocked.includes(p.providerId)
+    && matches(query, p.title, p.body, p.providerName, t(`service.${p.service}`), p.governorate && t(`gov.${p.governorate}`)))
+    .sort((a, b) => sort === 'priceLow' ? price(a) - price(b) : sort === 'priceHigh' ? price(b) - price(a) : b.createdAt.localeCompare(a.createdAt));
   return (
     <ScrollView>
       <H>{t('browseServices')}</H>
       {onNewPost && <Button title={t('newPost')} icon="plus" onPress={onNewPost} />}
-      <SearchBox value={query} onChange={setQuery} placeholder={t('searchPosts')} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-        {[null, ...SERVICES.map((x) => x.id)].map((id) => (
-          <Pressable key={id ?? 'all'} onPress={() => setFilter(id)}
-            style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, marginEnd: 6,
-              backgroundColor: filter === id ? colors.primary : colors.primarySoft }}>
-            <Text style={{ fontSize: 12, color: filter === id ? colors.primaryInk : colors.primary }}>
-              {id ? t(`service.${id}`) : t('all')}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <SearchWithFilters value={query} onChange={setQuery} placeholder={t('searchPosts')} active={(gov ? 1 : 0) + (sort !== 'new' ? 1 : 0)}>
+        <Chips label={t('governorate')} value={gov} onChange={setGov}
+          options={[{ id: null, title: t('all') }, ...GOVERNORATES.map((g) => ({ id: g, title: t(`gov.${g}`) }))]} />
+        <Chips label={t('sortBy')} value={sort} onChange={setSort}
+          options={[{ id: 'new', title: t('sort.new') }, { id: 'priceLow', title: t('sort.priceLow') }, { id: 'priceHigh', title: t('sort.priceHigh') }]} />
+      </SearchWithFilters>
+      <Chips value={filter} onChange={setFilter}
+        options={[{ id: null, title: t('all') }, ...SERVICES.map((x) => ({ id: x.id, title: t(`service.${x.id}`) }))]} />
       {posts === null && <P muted>{t('loading')}</P>}
       {posts !== null && shown.length === 0 && <P muted>{t('noPosts')}</P>}
       {shown.map((p) => <PostCard key={p.id} post={p} role={role} mine={p.providerId === userId} viewerId={userId} onProvider={onProvider} onRequest={onRequest} onChanged={load} />)}

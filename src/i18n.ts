@@ -344,6 +344,19 @@ const en = {
   'chatStatus.pending': 'Waiting for approval',
   'chatStatus.accepted': 'Open',
   'chatStatus.declined': 'Declined',
+  'service': 'Service',
+  'status': 'Status',
+  'sortBy': 'Sort by',
+  'filters': 'Filters',
+  'noResults': 'No results match the search.',
+  'sort.new': 'Newest',
+  'sort.old': 'Oldest',
+  'sort.priceLow': 'Lowest price',
+  'sort.priceHigh': 'Highest price',
+  'phase.all': 'All',
+  'phase.open': 'Awaiting quotes',
+  'phase.active': 'In progress',
+  'phase.closed': 'Finished or cancelled',
 };
 
 type Key = keyof typeof en;
@@ -691,6 +704,19 @@ const ar: Record<Key, string> = {
   'chatStatus.pending': 'بانتظار الموافقة',
   'chatStatus.accepted': 'مفتوحة',
   'chatStatus.declined': 'مرفوضة',
+  'service': 'الخدمة',
+  'status': 'الحالة',
+  'sortBy': 'الترتيب',
+  'filters': 'الفلاتر',
+  'noResults': 'لا توجد نتائج مطابقة للبحث.',
+  'sort.new': 'الأحدث',
+  'sort.old': 'الأقدم',
+  'sort.priceLow': 'الأقل سعراً',
+  'sort.priceHigh': 'الأعلى سعراً',
+  'phase.all': 'الكل',
+  'phase.open': 'بانتظار العروض',
+  'phase.active': 'قيد التنفيذ',
+  'phase.closed': 'منتهية أو ملغاة',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { createContext, useContext, useEffect, useRef } from 'react';
-import { BackHandler, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackHandler, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lang } from './types';
 
 export type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -91,6 +91,55 @@ export function SearchBox({ value, onChange, placeholder }: { value: string; onC
           <MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} />
         </Pressable>
       )}
+    </View>
+  );
+}
+
+// One row of choices for a search filter; the first option usually means "all".
+export function Chips<T>({ label, options, value, onChange }: {
+  label?: string; options: { id: T; title: string }[]; value: T; onChange: (v: T) => void;
+}) {
+  const { rtl } = useLang();
+  return (
+    <View style={{ marginBottom: 6 }}>
+      {!!label && <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4, textAlign: rtl ? 'right' : 'left' }}>{label}</Text>}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {options.map((o) => {
+          const on = o.id === value;
+          return (
+            <Pressable key={String(o.id)} onPress={() => onChange(o.id)}
+              style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, marginEnd: 6,
+                backgroundColor: on ? colors.primary : colors.primarySoft }}>
+              <Text style={{ fontSize: 12, color: on ? colors.primaryInk : colors.primary }}>{o.title}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+// Search box plus a button that shows or hides the filter rows under it.
+export function SearchWithFilters({ value, onChange, placeholder, active, children }: {
+  value: string; onChange: (v: string) => void; placeholder: string; active: number; children: React.ReactNode;
+}) {
+  const { t, rtl } = useLang();
+  const [open, setOpen] = React.useState(false);
+  return (
+    <View>
+      <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'flex-start', gap: 8 }}>
+        <View style={{ flex: 1 }}><SearchBox value={value} onChange={onChange} placeholder={placeholder} /></View>
+        <Pressable onPress={() => setOpen(!open)} accessibilityLabel={t('filters')}
+          style={[s.input, { paddingVertical: 9, paddingHorizontal: 10, backgroundColor: open || active ? colors.primarySoft : colors.bg }]}>
+          <MaterialCommunityIcons name="tune-variant" size={20} color={colors.primary} />
+          {active > 0 && (
+            <View style={{ position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{active}</Text>
+            </View>
+          )}
+        </Pressable>
+      </View>
+      {open && <View style={{ marginBottom: 6 }}>{children}</View>}
     </View>
   );
 }

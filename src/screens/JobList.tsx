@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { serviceName, SERVICES } from '../services';
-import { Job, JOB_STAGES, Role } from '../types';
-import { BackButton, Button, Card, colors, H, IconCircle, matches, P, SearchBox, useLang } from '../ui';
+import { GOVERNORATES, serviceName, SERVICES } from '../services';
+import { Job, JOB_STAGES, Role, ServiceId } from '../types';
+import { BackButton, Button, Card, colors, H, IconCircle, Chips, matches, P, SearchWithFilters, useLang } from '../ui';
 
 function Progress({ stage }: { stage: Job['stage'] }) {
   const { t, rtl } = useLang();
@@ -26,14 +26,36 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
 }) {
   const { t, rtl } = useLang();
   const [query, setQuery] = useState('');
+  const [service, setService] = useState<ServiceId | null>(null);
+  const [gov, setGov] = useState<string | null>(null);
+  const [status, setStatus] = useState<'all' | 'open' | 'active' | 'closed'>('all');
+  const [sort, setSort] = useState<'new' | 'old'>('new');
+  const phase = (j: Job) => ['requested', 'quoted'].includes(j.stage) ? 'open' : ['done', 'cancelled'].includes(j.stage) ? 'closed' : 'active';
+  const shown = jobs.filter((j) => (!service || j.service === service) && (!gov || j.location.governorate === gov)
+    && (status === 'all' || phase(j) === status)
+    && matches(query, serviceName(j, t), t(`gov.${j.location.governorate}`), j.location.directorate,
+      j.location.village, j.location.basin, j.location.plotNumber, j.notes, t(`stage.${j.stage}`)))
+    .sort((a, b) => sort === 'new' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt));
   return (
     <ScrollView>
       <H>{role === 'customer' ? t('myJobs') : t('jobFeed')}</H>
       {role === 'customer' && onNew && <Button title={t('newRequest')} icon="plus" onPress={onNew} />}
-      {jobs.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t('searchJobs')} />}
+      {jobs.length > 0 && (
+        <SearchWithFilters value={query} onChange={setQuery} placeholder={t('searchJobs')}
+          active={[service, gov, status !== 'all' || null, sort !== 'new' || null].filter(Boolean).length}>
+          <Chips label={t('service')} value={service} onChange={setService}
+            options={[{ id: null, title: t('all') }, ...SERVICES.map((x) => ({ id: x.id, title: t(`service.${x.id}`) }))]} />
+          <Chips label={t('governorate')} value={gov} onChange={setGov}
+            options={[{ id: null, title: t('all') }, ...GOVERNORATES.map((g) => ({ id: g, title: t(`gov.${g}`) }))]} />
+          <Chips label={t('status')} value={status} onChange={setStatus}
+            options={(['all', 'open', 'active', 'closed'] as const).map((id) => ({ id, title: t(`phase.${id}`) }))} />
+          <Chips label={t('sortBy')} value={sort} onChange={setSort}
+            options={[{ id: 'new', title: t('sort.new') }, { id: 'old', title: t('sort.old') }]} />
+        </SearchWithFilters>
+      )}
       {jobs.length === 0 && <P muted>{t('noJobs')}</P>}
-      {jobs.filter((j) => matches(query, serviceName(j, t), t(`gov.${j.location.governorate}`), j.location.directorate,
-        j.location.village, j.location.basin, j.location.plotNumber, j.notes, t(`stage.${j.stage}`))).map((j) => {
+      {jobs.length > 0 && shown.length === 0 && <P muted>{t('noResults')}</P>}
+      {shown.map((j) => {
         const icon = SERVICES.find((s) => s.id === j.service)?.icon ?? 'map-marker';
         return (
           <Card key={j.id} onPress={() => onOpen(j.id)}>
