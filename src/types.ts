@@ -92,3 +92,20 @@ export interface Job extends ServiceRequest {
   milestones: Milestone[];
   events: JobEvent[];
 }
+
+export interface Attachment { url: string; name: string; kind: 'image' | 'document' }
+
+// A provider's public offer of a service, shown in the services feed and on their profile.
+export interface ServicePost {
+  id: string;
+  providerId: string;
+  providerName: string;
+  service: ServiceId;
+  title: string;
+  body: string;
+  priceFromJod?: number;
+  governorate?: string;
+  attachments: Attachment[];
+  active: boolean;
+  createdAt: string;
+}

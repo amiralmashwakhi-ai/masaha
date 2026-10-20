@@ -1,6 +1,6 @@
 import { DEFAULT_MILESTONES } from './money';
 import { supabase } from './supabase';
-import { Job, JobEvent, Milestone, Provider, Review, Role, ServiceId, ServiceRequest } from './types';
+import { Attachment, Job, JobEvent, Milestone, Provider, Review, Role, ServiceId, ServicePost, ServiceRequest } from './types';
 
 // Rows as Supabase returns them; money is in fils.
 interface JobRow {
@@ -218,4 +218,56 @@ export async function listMessages(chatId: string): Promise<ChatMessage[]> {
 export async function sendMessage(chatId: string, senderId: string, body: string) {
   const { error } = await supabase.from('chat_messages').insert({ chat_id: chatId, sender_id: senderId, body: stripDigits(body).trim() });
   if (error) throw error;
+}
+
+// Service offer posts. Text has its numbers removed on the server, like chat; the price has its own field.
+interface PostRow {
+  id: string; provider_id: string; service: ServiceId; title: string; body: string; price_from_fils: number | null;
+  governorate: string | null; attachments: Attachment[]; active: boolean; created_at: string;
+  providers: { display_name: string } | null;
+}
+
+export async function listPosts(opts: { providerId?: string } = {}): Promise<ServicePost[]> {
+  let q = supabase.from('service_posts').select('*, providers(display_name)').order('created_at', { ascending: false }).limit(100);
+  if (opts.providerId) q = q.eq('provider_id', opts.providerId);
+  else q = q.eq('active', true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data as unknown as PostRow[]).map((r) => ({
+    id: r.id, providerId: r.provider_id, providerName: r.providers?.display_name ?? '', service: r.service,
+    title: r.title, body: r.body, priceFromJod: r.price_from_fils == null ? undefined : r.price_from_fils / 1000,
+    governorate: r.governorate ?? undefined, attachments: r.attachments ?? [], active: r.active, createdAt: r.created_at,
+  }));
+}
+
+export async function createPost(userId: string, p: {
+  service: ServiceId; title: string; body: string; priceFromJod?: number; governorate?: string; attachments: Attachment[];
+}) {
+  const { error } = await supabase.from('service_posts').insert({
+    provider_id: userId, service: p.service, title: stripDigits(p.title).trim(), body: stripDigits(p.body).trim(),
+    price_from_fils: p.priceFromJod == null ? null : Math.round(p.priceFromJod * 1000),
+    governorate: p.governorate || null, attachments: p.attachments,
+  });
+  if (error) throw error;
+}
+
+export async function setPostActive(id: string, active: boolean) {
+  const { error } = await supabase.from('service_posts').update({ active }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deletePost(id: string) {
+  const { error } = await supabase.from('service_posts').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Uploads a photo or document into posts/<user id>/ and returns its public link.
+export async function uploadPostFile(userId: string, uri: string, name: string, mime: string): Promise<Attachment> {
+  const body = await (await fetch(uri)).arrayBuffer();
+  const safe = name.replace(/[^\w.\-]+/g, '_').slice(-60) || 'file';
+  const path = `${userId}/${Date.now()}-${safe}`;
+  const { error } = await supabase.storage.from('posts').upload(path, body, { contentType: mime });
+  if (error) throw error;
+  const url = supabase.storage.from('posts').getPublicUrl(path).data.publicUrl;
+  return { url, name, kind: mime.startsWith('image/') ? 'image' : 'document' };
 }

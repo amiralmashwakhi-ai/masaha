@@ -1,26 +1,36 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { loadProfile, Profile, signOut, useSession } from './src/auth';
 import * as data from './src/data';
 import { applyDirection, makeT } from './src/i18n';
 import { EditProvider } from './src/screens/EditProvider';
+import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
+import { Menu } from './src/screens/Menu';
+import { PostEditor, PostFeed } from './src/screens/Posts';
 import { Settings } from './src/screens/Settings';
 import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
 import { ProviderProfile } from './src/screens/ProviderProfile';
 import { RequestWizard } from './src/screens/RequestWizard';
 import { CreateProfile, SignIn } from './src/screens/SignIn';
-import { Job, Lang, Provider, Role } from './src/types';
-import { colors, Header, LangCtx, P } from './src/ui';
+import { Job, Lang, Provider, Role, ServiceId } from './src/types';
+import { colors, Header, LangCtx, P, setDark } from './src/ui';
 
 type Screen =
-  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard' } | { name: 'editProvider' } | { name: 'settings' }
-  | { name: 'job'; id: string } | { name: 'profile'; id: string; back: Screen };
+  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId } | { name: 'editProvider' } | { name: 'settings' }
+  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' }
+  | { name: 'job'; id: string; back?: Screen } | { name: 'profile'; id: string; back: Screen };
+
+const PREFS = { lang: 'masaha.lang', dark: 'masaha.dark' };
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('ar');
+  const [dark, setDarkState] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [role, setRole] = useState<Role>('customer');
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -34,12 +44,25 @@ export default function App() {
   useEffect(() => { setProfile(undefined); refreshProfile(); }, [userId]);
   useEffect(() => { if (profile && profile.role !== 'admin') setRole(profile.role); }, [profile]);
 
+  const applyLang = (next: Lang) => { applyDirection(next); setLang(next); };
+  const applyDark = (on: boolean) => { setDark(on); setDarkState(on); };
+  // Remember language and night mode between launches; storage can fail, so defaults stay usable.
+  useEffect(() => {
+    AsyncStorage.multiGet([PREFS.lang, PREFS.dark]).then(([[, l], [, d]]) => {
+      if (l === 'en' || l === 'ar') applyLang(l);
+      if (d === '1') applyDark(true);
+    }).catch(() => {});
+  }, []);
   const toggleLang = () => {
     const next = lang === 'ar' ? 'en' : 'ar';
-    applyDirection(next);
-    setLang(next);
+    applyLang(next);
+    AsyncStorage.setItem(PREFS.lang, next).catch(() => {});
   };
-  const ctx = useMemo(() => ({ lang, t: makeT(lang), rtl: lang === 'ar', toggleLang }), [lang]);
+  const toggleDark = () => {
+    applyDark(!dark);
+    AsyncStorage.setItem(PREFS.dark, dark ? '0' : '1').catch(() => {});
+  };
+  const ctx = useMemo(() => ({ lang, t: makeT(lang), rtl: lang === 'ar', toggleLang, dark, toggleDark }), [lang, dark]);
 
   const refresh = useCallback(async () => {
     if (!userId || !profile) return;
@@ -79,86 +102,139 @@ export default function App() {
   const viewedProvider = screen.name === 'profile' ? providers.find((p) => p.id === screen.id) : undefined;
   const me = providers.find((p) => p.id === userId);
   const ready = session && profile;
+  // The provider feed hides jobs another provider won; those stay in History.
+  const visibleJobs = role === 'provider'
+    ? jobs.filter((j) => !j.providerId || j.providerId === userId)
+    : jobs;
+
+  // Providers seen in posts may not be loaded yet.
+  const openProfile = async (id: string) => {
+    if (!providers.some((p) => p.id === id)) {
+      const loaded = await data.loadProviders([id]).catch(() => []);
+      setProviders((cur) => [...cur, ...loaded]);
+    }
+    setScreen({ name: 'profile', id, back: screen });
+  };
+  const goHome = () => setScreen({ name: 'home' });
+  const requestService = (service: ServiceId) => setScreen({ name: 'wizard', service });
 
   return (
-    <LangCtx.Provider value={ctx}>
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.body}>
-          <Header />
-          {!loading && !session && <SignIn />}
-          {session && profile === undefined && <P muted>{ctx.t('loading')}</P>}
-          {session && profile === null && userId && (
-            <CreateProfile userId={userId} defaultName={session.user.user_metadata?.full_name} onDone={refreshProfile} />
-          )}
-          {!!error && ready && <P>{error}</P>}
-          {ready && screen.name === 'home' && (
-            <Home
-              role={role}
-              name={profile.full_name}
-              coverUrl={profile.cover_url}
-              onJobs={() => setScreen({ name: 'jobs' })}
-              onNew={() => setScreen({ name: 'wizard' })}
-              onEditProfile={role === 'provider' && me ? () => setScreen({ name: 'editProvider' }) : undefined}
-              onSettings={() => setScreen({ name: 'settings' })}
-            />
-          )}
-          {ready && screen.name === 'settings' && (
-            <Settings
-              profile={profile}
-              isProvider={role === 'provider'}
-              onChanged={() => { refreshProfile(); refresh(); }}
-              onSignOut={() => { signOut(); setScreen({ name: 'home' }); }}
-              onBack={() => setScreen({ name: 'home' })}
-            />
-          )}
-          {ready && screen.name === 'editProvider' && me && (
-            <EditProvider
-              provider={me}
-              onSave={async (p) => { await data.saveProvider(p); await refresh(); }}
-              onBack={() => setScreen({ name: 'home' })}
-            />
-          )}
-          {ready && screen.name === 'jobs' && (
-            <JobList
-              role={role}
-              jobs={jobs}
-              onNew={() => setScreen({ name: 'wizard' })}
-              onOpen={(id) => setScreen({ name: 'job', id })}
-              onBack={() => setScreen({ name: 'home' })}
-            />
-          )}
-          {ready && screen.name === 'wizard' && userId && (
-            <RequestWizard
-              onCancel={() => setScreen({ name: 'jobs' })}
-              onDone={async (r) => {
-                await run(() => data.createJob(userId, r))();
-                setScreen({ name: 'jobs' });
-              }}
-            />
-          )}
-          {ready && current && userId && (
-            <JobDetail
-              job={current}
-              role={role}
-              userId={userId}
-              providers={providers}
-              loadCustomerReviews={data.reviewsAbout}
-              actions={actions}
-              onProfile={(id) => setScreen({ name: 'profile', id, back: screen })}
-              onBack={() => setScreen({ name: 'jobs' })}
-            />
-          )}
-          {ready && viewedProvider && screen.name === 'profile' && (
-            <ProviderProfile provider={viewedProvider} onBack={() => setScreen(screen.back)} />
-          )}
-        </View>
-        <StatusBar style="dark" />
-      </SafeAreaView>
-    </LangCtx.Provider>
+    <SafeAreaProvider>
+      <LangCtx.Provider value={ctx}>
+        <SafeAreaView key={dark ? 'dark' : 'light'} edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.bg }}>
+          <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 8 }}>
+            <Header onMenu={() => setMenuOpen(true)} />
+            {!loading && !session && <SignIn />}
+            {session && profile === undefined && <P muted>{ctx.t('loading')}</P>}
+            {session && profile === null && userId && (
+              <CreateProfile userId={userId} defaultName={session.user.user_metadata?.full_name} onDone={refreshProfile} />
+            )}
+            {!!error && ready && <P>{error}</P>}
+            {ready && screen.name === 'home' && (
+              <Home
+                role={role}
+                name={profile.full_name}
+                coverUrl={profile.cover_url}
+                onJobs={() => setScreen({ name: 'jobs' })}
+                onNew={() => setScreen({ name: 'wizard' })}
+                onBrowse={() => setScreen({ name: 'posts' })}
+                onNewPost={role === 'provider' && me ? () => setScreen({ name: 'newPost' }) : undefined}
+                onEditProfile={role === 'provider' && me ? () => openProfile(me.id) : undefined}
+                onHistory={() => setScreen({ name: 'history' })}
+              />
+            )}
+            {ready && screen.name === 'settings' && (
+              <Settings
+                profile={profile}
+                isProvider={role === 'provider'}
+                onChanged={() => { refreshProfile(); refresh(); }}
+                onSignOut={() => { signOut(); goHome(); }}
+                onBack={goHome}
+              />
+            )}
+            {ready && screen.name === 'editProvider' && me && (
+              <EditProvider
+                provider={me}
+                onSave={async (p) => { await data.saveProvider(p); await refresh(); }}
+                onBack={() => openProfile(me.id)}
+              />
+            )}
+            {ready && screen.name === 'posts' && (
+              <PostFeed
+                role={role}
+                onProvider={openProfile}
+                onRequest={requestService}
+                onNewPost={role === 'provider' && me ? () => setScreen({ name: 'newPost' }) : undefined}
+                onBack={goHome}
+              />
+            )}
+            {ready && screen.name === 'newPost' && userId && (
+              <PostEditor userId={userId} onDone={() => openProfile(userId)} onBack={goHome} />
+            )}
+            {ready && screen.name === 'history' && userId && (
+              <History
+                role={role}
+                userId={userId}
+                jobs={jobs}
+                onOpenJob={(id) => setScreen({ name: 'job', id, back: screen })}
+                onBack={goHome}
+              />
+            )}
+            {ready && screen.name === 'jobs' && (
+              <JobList
+                role={role}
+                jobs={visibleJobs}
+                onNew={() => setScreen({ name: 'wizard' })}
+                onOpen={(id) => setScreen({ name: 'job', id })}
+                onBack={goHome}
+              />
+            )}
+            {ready && screen.name === 'wizard' && userId && (
+              <RequestWizard
+                initialService={screen.service}
+                onCancel={() => setScreen({ name: 'jobs' })}
+                onDone={async (r) => {
+                  await run(() => data.createJob(userId, r))();
+                  setScreen({ name: 'jobs' });
+                }}
+              />
+            )}
+            {ready && current && userId && screen.name === 'job' && (
+              <JobDetail
+                job={current}
+                role={role}
+                userId={userId}
+                providers={providers}
+                loadCustomerReviews={data.reviewsAbout}
+                actions={actions}
+                onProfile={openProfile}
+                onBack={() => setScreen(screen.back ?? { name: 'jobs' })}
+              />
+            )}
+            {ready && viewedProvider && screen.name === 'profile' && (
+              <ProviderProfile
+                provider={viewedProvider}
+                role={role}
+                mine={viewedProvider.id === userId}
+                onRequest={requestService}
+                onNewPost={() => setScreen({ name: 'newPost' })}
+                onEdit={() => setScreen({ name: 'editProvider' })}
+                onBack={() => setScreen(screen.back)}
+              />
+            )}
+          </View>
+          <Menu
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            signedIn={!!ready}
+            onProfile={() => (role === 'provider' && me ? openProfile(me.id) : setScreen({ name: 'settings' }))}
+            onHistory={() => setScreen({ name: 'history' })}
+            onSettings={() => setScreen({ name: 'settings' })}
+            onSignOut={() => { signOut(); goHome(); }}
+          />
+          <StatusBar style={dark ? 'light' : 'dark'} />
+        </SafeAreaView>
+      </LangCtx.Provider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  body: { flex: 1, paddingHorizontal: 16, paddingTop: 44 },
-});

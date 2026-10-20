@@ -8,11 +8,11 @@ const emptyLocation: PlotLocation = {
   governorate: '', directorate: '', village: '', basin: '', plotNumber: '',
 };
 
-export function RequestWizard({ onDone, onCancel }: {
-  onDone: (r: ServiceRequest) => void; onCancel: () => void;
+export function RequestWizard({ initialService, onDone, onCancel }: {
+  initialService?: ServiceId; onDone: (r: ServiceRequest) => void; onCancel: () => void;
 }) {
   const { t } = useLang();
-  const [service, setService] = useState<ServiceId | null>(null);
+  const [service, setService] = useState<ServiceId | null>(initialService ?? null);
   const [loc, setLoc] = useState<PlotLocation>(emptyLocation);
   const [area, setArea] = useState('');
   const [notes, setNotes] = useState('');

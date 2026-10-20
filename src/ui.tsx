@@ -6,12 +6,26 @@ import { Lang } from './types';
 export type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 // Taken from the logo: deep teal with a warm sand accent on a soft cream background; no pure black.
-export const colors = {
+const light = {
   bg: '#F6F3ED', card: '#FFFFFF', ink: '#2D3A3A', muted: '#7B8786',
   primary: '#2F6F73', primaryInk: '#FFFFFF', primarySoft: '#E3EEEE',
-  accent: '#E0A458', accentSoft: '#FBF0E1',
+  accent: '#E0A458', accentSoft: '#FBF0E1', accentInk: '#B7782F',
   line: '#E7E2D8', done: '#2F6F73', star: '#E0A458', danger: '#C0614A',
 };
+// Night mode: soft charcoal-teal instead of black, same teal and sand.
+const dark: typeof light = {
+  bg: '#1B2223', card: '#253031', ink: '#E4EAE8', muted: '#97A4A2',
+  primary: '#5AA9AD', primaryInk: '#0F2526', primarySoft: '#2D4243',
+  accent: '#E0A458', accentSoft: '#3B3226', accentInk: '#E8B977',
+  line: '#34403F', done: '#5AA9AD', star: '#E0A458', danger: '#E07A62',
+};
+
+// Mutated in place by setDark, so screens reading colors.x at render time pick up the theme.
+export const colors = { ...light };
+export function setDark(on: boolean) {
+  Object.assign(colors, on ? dark : light);
+  s = makeStyles();
+}
 
 export const radius = { card: 20, button: 14, input: 12 };
 
@@ -19,8 +33,8 @@ const shadow = {
   shadowColor: '#4A4030', shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2,
 };
 
-interface Ctx { lang: Lang; t: (k: string) => string; rtl: boolean; toggleLang: () => void }
-export const LangCtx = createContext<Ctx>({ lang: 'ar', t: (k) => k, rtl: true, toggleLang: () => {} });
+interface Ctx { lang: Lang; t: (k: string) => string; rtl: boolean; toggleLang: () => void; dark: boolean; toggleDark: () => void }
+export const LangCtx = createContext<Ctx>({ lang: 'ar', t: (k) => k, rtl: true, toggleLang: () => {}, dark: false, toggleDark: () => {} });
 export const useLang = () => useContext(LangCtx);
 
 const logo = require('../assets/brand/logo.png');
@@ -29,18 +43,17 @@ export function Logo({ size = 36 }: { size?: number }) {
   return <Image source={logo} style={{ width: size, height: size, borderRadius: size * 0.24 }} />;
 }
 
-// Shown on every screen: logo and name, language switch in the top corner.
-export function Header() {
-  const { t, toggleLang, rtl } = useLang();
+// Shown on every screen: logo and name, and the ☰ menu in the top corner.
+export function Header({ onMenu }: { onMenu: () => void }) {
+  const { t, rtl } = useLang();
   return (
     <View style={[s.header, rtl && { flexDirection: 'row-reverse' }]}>
       <View style={[s.row, rtl && { flexDirection: 'row-reverse' }]}>
         <Logo size={34} />
         <Text style={s.brand}>{t('appName')}</Text>
       </View>
-      <Pressable onPress={toggleLang} style={s.langBtn} hitSlop={8}>
-        <MaterialCommunityIcons name="translate" size={15} color={colors.primary} />
-        <Text style={s.langText}>{t('switchLang')}</Text>
+      <Pressable onPress={onMenu} style={s.menuBtn} hitSlop={8} accessibilityLabel={t('menu')}>
+        <MaterialCommunityIcons name="menu" size={22} color={colors.primary} />
       </Pressable>
     </View>
   );
@@ -58,7 +71,7 @@ export function P({ children, muted, small }: { children: React.ReactNode; muted
 
 export function IconCircle({ name, size = 40, tone = 'primary' }: { name: IconName; size?: number; tone?: 'primary' | 'accent' }) {
   const bg = tone === 'primary' ? colors.primarySoft : colors.accentSoft;
-  const fg = tone === 'primary' ? colors.primary : '#B7782F';
+  const fg = tone === 'primary' ? colors.primary : colors.accentInk;
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
       <MaterialCommunityIcons name={name} size={size * 0.55} color={fg} />
@@ -127,12 +140,11 @@ export function Field({ label, value, onChange, numeric, secure, multiline }: {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   brand: { fontSize: 17, fontWeight: '700', color: colors.primary },
-  langBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primarySoft, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999 },
-  langText: { fontSize: 12, fontWeight: '600', color: colors.primary },
+  menuBtn: { backgroundColor: colors.primarySoft, width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   h: { fontSize: 19, fontWeight: '700', color: colors.ink, marginBottom: 8 },
   p: { fontSize: 14, color: colors.ink, lineHeight: 21 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
@@ -146,3 +158,4 @@ const s = StyleSheet.create({
   label: { fontSize: 12, color: colors.muted, marginBottom: 5 },
   input: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.input, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14, color: colors.ink },
 });
+let s = makeStyles();
