@@ -239,7 +239,7 @@ const en = {
   'disputeReason': 'Describe the problem',
   'sendDispute': 'Open a dispute',
   'disputeOpen': 'A dispute is open on this job',
-  'disputeOpenHint': 'Payments are frozen until Masaha decides.',
+  'disputeOpenHint': 'Payments stay frozen until you settle or Masaha decides.',
   'licenseTitle': 'Professional licence',
   'license.none': 'Upload your licence so customers see the verified badge.',
   'license.pending': 'Your licence is under review.',
@@ -310,6 +310,12 @@ const en = {
   'withReport': 'With a report',
   'withoutReport': 'Without a report',
   'withReportHint': 'A signed and stamped report of the staked points',
+  'disputeTalkHint': 'Use the chat to explain the problem and agree how to fix it. When it is fixed, both of you can end the dispute amicably.',
+  'settleAmicably': 'End the dispute amicably',
+  'otherSideSettles': 'The other side agreed to end the dispute amicably.',
+  'waitingOtherSide': 'You agreed. Waiting for the other side.',
+  'ev.settleProposed': 'Agreed to end the dispute amicably',
+  'ev.settled': 'Dispute ended amicably; the job continues',
 };
 
 type Key = keyof typeof en;
@@ -552,7 +558,7 @@ const ar: Record<Key, string> = {
   'disputeReason': 'اشرح المشكلة',
   'sendDispute': 'فتح نزاع',
   'disputeOpen': 'يوجد نزاع مفتوح على هذا العمل',
-  'disputeOpenHint': 'الدفعات مجمّدة حتى تقرر مساحة.',
+  'disputeOpenHint': 'تبقى الدفعات مجمّدة حتى تتفقا أو تقرر مساحة.',
   'licenseTitle': 'الرخصة المهنية',
   'license.none': 'ارفع رخصتك ليظهر للعملاء أنك موثّق.',
   'license.pending': 'رخصتك قيد المراجعة.',
@@ -623,6 +629,12 @@ const ar: Record<Key, string> = {
   'withReport': 'مع تقرير',
   'withoutReport': 'بدون تقرير',
   'withReportHint': 'تقرير موقّع ومختوم بالنقاط التي تم توقيعها',
+  'disputeTalkHint': 'استخدما المحادثة لتوضيح الخلل والاتفاق على تصويبه. وبعد التصويب يمكنكما إنهاء النزاع ودياً.',
+  'settleAmicably': 'إنهاء النزاع ودياً',
+  'otherSideSettles': 'وافق الطرف الآخر على إنهاء النزاع ودياً.',
+  'waitingOtherSide': 'وافقت أنت. بانتظار موافقة الطرف الآخر.',
+  'ev.settleProposed': 'وافق على إنهاء النزاع ودياً',
+  'ev.settled': 'انتهى النزاع ودياً ويستمر العمل',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

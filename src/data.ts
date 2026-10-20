@@ -398,6 +398,14 @@ export async function openDisputes(): Promise<OpenDispute[]> {
   return (data as unknown as { id: string; job_id: string; reason: string; opened_at: string; jobs: { service: ServiceId } | null }[])
     .map((d) => ({ id: d.id, jobId: d.job_id, reason: d.reason, at: d.opened_at, service: d.jobs?.service }));
 }
+// Amicable settlement: each side agrees; once both have, the job carries on.
+export async function openDisputeOf(jobId: string) {
+  const { data } = await supabase.from('disputes').select('id, customer_settles, provider_settles')
+    .eq('job_id', jobId).is('closed_at', null).maybeSingle();
+  return data ? { id: data.id as string, customer: !!data.customer_settles, provider: !!data.provider_settles } : null;
+}
+export const settleDispute = (jobId: string) => rpc('settle_dispute', { p_job: jobId });
+
 export const requestCorrection = (id: string, note: string) => rpc('request_correction', { p_dispute: id, p_note: note });
 
 // Deliverables: signed and stamped files, read through short-lived links.

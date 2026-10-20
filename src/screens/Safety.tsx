@@ -71,7 +71,7 @@ export function JobSafety({ job, role, onDone, onDeleted }: { job: Job; role: Ro
   const act = async (fn: () => Promise<unknown>) => {
     try { await fn(); setMode('none'); onDone(); } catch { setErr(t('somethingWrong')); }
   };
-  if (job.stage === 'disputed') return <Card><P>{t('disputeOpen')}</P><P muted small>{t('disputeOpenHint')}</P></Card>;
+  if (job.stage === 'disputed') return <DisputeCard job={job} role={role} onDone={onDone} />;
   if (!canCancel && !canDispute && !canDelete) return null;
   return (
     <Card>
@@ -102,6 +102,31 @@ export function JobSafety({ job, role, onDone, onDeleted }: { job: Job; role: Ro
           <Button title={t('back')} secondary onPress={() => setMode('none')} />
         </>
       )}
+      {!!err && <P small>{err}</P>}
+    </Card>
+  );
+}
+
+// While a dispute is open: the chat is open for both sides, and either can agree to end it amicably.
+function DisputeCard({ job, role, onDone }: { job: Job; role: Role; onDone: () => void }) {
+  const { t } = useLang();
+  const [d, setD] = useState<Awaited<ReturnType<typeof data.openDisputeOf>>>(null);
+  const [err, setErr] = useState('');
+  const load = useCallback(() => { data.openDisputeOf(job.id).then(setD).catch(() => {}); }, [job.id]);
+  useEffect(load, [load]);
+  const mine = role === 'customer' ? d?.customer : d?.provider;
+  const theirs = role === 'customer' ? d?.provider : d?.customer;
+  return (
+    <Card>
+      <P>{t('disputeOpen')}</P>
+      <P muted small>{t('disputeTalkHint')}</P>
+      {theirs && !mine && <P>{t('otherSideSettles')}</P>}
+      {mine
+        ? <P muted small>{t('waitingOtherSide')}</P>
+        : <Button title={t('settleAmicably')} icon="handshake-outline" onPress={async () => {
+            try { await data.settleDispute(job.id); load(); onDone(); } catch { setErr(t('somethingWrong')); }
+          }} />}
+      <P muted small>{t('disputeOpenHint')}</P>
       {!!err && <P small>{err}</P>}
     </Card>
   );

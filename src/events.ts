@@ -21,6 +21,8 @@ export function eventText(e: JobEvent, t: T): string {
   if (s === 'quote accepted') return t('ev.accepted');
   if (s === 'agreement signed') return t('ev.signed');
   if (s === 'signature withdrawn') return t('ev.unsigned');
+  if (s === 'settlement proposed') return t('ev.settleProposed');
+  if (s === 'dispute settled amicably') return t('ev.settled');
   if (s.startsWith('paid into escrow')) return t('ev.paid');
   if ((JOB_STAGES as string[]).includes(s) || s === 'cancelled') return t(`stage.${s}`);
   return tidy(s);
