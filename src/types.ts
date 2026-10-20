@@ -3,7 +3,7 @@ export type Role = 'customer' | 'provider';
 
 export type ServiceId =
   | 'plot' | 'subdivision' | 'topographic' | 'staking'
-  | 'asBuilt' | 'sitePlan' | 'dispute';
+  | 'asBuilt' | 'sitePlan' | 'dispute' | 'other';
 
 export type JobStage =
   | 'requested' | 'quoted' | 'agreed' | 'visitScheduled'
@@ -35,6 +35,7 @@ export interface ServiceRequest {
   visits?: number; // construction staking only
   visitLength?: VisitLength;
   withReport?: boolean; // staking: written report or not
+  customService?: string; // the customer's own words when service is 'other'
   createdAt: string;
   stage: JobStage;
 }

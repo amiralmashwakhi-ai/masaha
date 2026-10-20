@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { SERVICES } from '../services';
+import { serviceName, SERVICES } from '../services';
 import { Job, JOB_STAGES, Role } from '../types';
 import { Button, Card, colors, H, IconCircle, matches, P, SearchBox, useLang } from '../ui';
 
@@ -32,7 +32,7 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
       {role === 'customer' && onNew && <Button title={t('newRequest')} icon="plus" onPress={onNew} />}
       {jobs.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t('searchJobs')} />}
       {jobs.length === 0 && <P muted>{t('noJobs')}</P>}
-      {jobs.filter((j) => matches(query, t(`service.${j.service}`), t(`gov.${j.location.governorate}`), j.location.directorate,
+      {jobs.filter((j) => matches(query, serviceName(j, t), t(`gov.${j.location.governorate}`), j.location.directorate,
         j.location.village, j.location.basin, j.location.plotNumber, j.notes, t(`stage.${j.stage}`))).map((j) => {
         const icon = SERVICES.find((s) => s.id === j.service)?.icon ?? 'map-marker';
         return (
@@ -40,7 +40,7 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
             <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 }}>
               <IconCircle name={icon} />
               <View style={{ flex: 1 }}>
-                <P>{t(`service.${j.service}`)}</P>
+                <P>{serviceName(j, t)}</P>
                 <P muted small>
                   {[t(`gov.${j.location.governorate}`), j.location.village,
                     j.location.basin && `${t('basin')} ${j.location.basin}`,

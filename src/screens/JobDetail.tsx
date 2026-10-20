@@ -3,6 +3,7 @@ import { Linking, ScrollView, Text, View } from 'react-native';
 import * as data from '../data';
 import { autoReleaseAt, correctionNote, eventText, lastCorrectionAt } from '../events';
 import { fmt, split } from '../money';
+import { serviceName } from '../services';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
 import { ChatBubble } from './ChatCard';
 import { Deliverables } from './Deliverables';
@@ -70,7 +71,8 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   return (
     <View style={{ flex: 1 }}>
     <ScrollView>
-      <H>{t(`service.${job.service}`)}</H>
+      <H>{serviceName(job, t)}</H>
+      {!!job.notes && <P muted>{job.notes}</P>}
       <P muted>{JOB_STAGES.includes(job.stage) ? `${t(`stage.${job.stage}`)} (${JOB_STAGES.indexOf(job.stage) + 1}/${JOB_STAGES.length})` : t(`stage.${job.stage}`)}</P>
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
       {note && (

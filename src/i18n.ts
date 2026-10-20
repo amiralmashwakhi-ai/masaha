@@ -323,6 +323,10 @@ const en = {
   'autoReleaseOn': 'If you neither release nor open a dispute, this payment goes to the provider automatically on {d}.',
   'ev.autoReleased': 'Released automatically after 5 days',
   'feesNote': 'Prices are for the surveying service only. Fees of government bodies (e.g. Department of Lands and Survey fees) are paid by the customer directly to the authority.',
+  'service.other': 'Other service',
+  'otherHint': 'A service not listed here',
+  'otherName': 'What service do you need?',
+  'otherPrice': 'The price is set by the surveyors\' quotes.',
 };
 
 type Key = keyof typeof en;
@@ -649,6 +653,10 @@ const ar: Record<Key, string> = {
   'autoReleaseOn': 'إن لم تحوّل الدفعة أو تفتح نزاعاً، تتحوّل للمساح تلقائياً بتاريخ {d}.',
   'ev.autoReleased': 'تحويل تلقائي بعد ٥ أيام',
   'feesNote': 'الأسعار هي أتعاب تقديم الخدمة فقط. رسوم الجهات الحكومية (مثل رسوم دائرة الأراضي والمساحة) يدفعها العميل بنفسه للجهة المختصة.',
+  'service.other': 'خدمة أخرى',
+  'otherHint': 'خدمة غير موجودة في القائمة',
+  'otherName': 'ما الخدمة التي تحتاجها؟',
+  'otherPrice': 'يُحدَّد السعر من عروض المساحين.',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

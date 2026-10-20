@@ -6,7 +6,7 @@ import { Attachment, Job, JobEvent, Milestone, Provider, Review, Role, ServiceId
 interface JobRow {
   id: string; customer_id: string; service: ServiceId; governorate: string; directorate: string | null;
   village: string | null; basin: string | null; plot_number: string | null; area_m2: number | null;
-  notes: string | null; visits: number | null; visit_length: Job['visitLength'] | null; with_report: boolean | null; stage: Job['stage']; accepted_quote_id: string | null; created_at: string;
+  notes: string | null; visits: number | null; visit_length: Job['visitLength'] | null; with_report: boolean | null; custom_service: string | null; stage: Job['stage']; accepted_quote_id: string | null; created_at: string;
   quotes: { id: string; provider_id: string; price_fils: number; days: number; scope: string }[];
   agreements: { customer_signed_at: string | null; provider_signed_at: string | null } | null;
   escrow_milestones: { key: Milestone['key']; share: number; status: Milestone['status'] }[];
@@ -34,6 +34,7 @@ function toJob(r: JobRow): Job {
     visits: r.visits ?? undefined,
     visitLength: r.visit_length ?? undefined,
     withReport: r.with_report ?? undefined,
+    customService: r.custom_service ?? undefined,
     createdAt: r.created_at,
     stage: r.stage,
     acceptedQuoteId: r.accepted_quote_id ?? undefined,
@@ -76,7 +77,7 @@ export async function createJob(userId: string, r: ServiceRequest) {
     customer_id: userId, service: r.service, governorate: r.location.governorate,
     directorate: r.location.directorate || null, village: r.location.village || null,
     basin: r.location.basin || null, plot_number: r.location.plotNumber || null,
-    area_m2: r.location.areaM2 ?? null, notes: r.notes || null, visits: r.visits ?? null, visit_length: r.visitLength ?? null, with_report: r.withReport ?? null,
+    area_m2: r.location.areaM2 ?? null, notes: r.notes || null, visits: r.visits ?? null, visit_length: r.visitLength ?? null, with_report: r.withReport ?? null, custom_service: r.service === 'other' ? r.customService?.trim() || null : null,
   });
   if (error) throw error;
 }

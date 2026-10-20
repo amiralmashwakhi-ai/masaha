@@ -6,6 +6,7 @@ import * as data from '../data';
 import { Job, Provider, Role } from '../types';
 import { Button, Card, colors, Field, IconCircle, P, useLang } from '../ui';
 import { ReportBlock } from './Safety';
+import { serviceName } from '../services';
 
 const POLL_MS = 4000;
 
@@ -152,7 +153,7 @@ export function ChatBubble({ job, role, userId, providers }: { job: Job; role: R
           <View style={{ maxHeight: '85%', backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24,
             paddingHorizontal: 16, paddingTop: 10, paddingBottom: insets.bottom + 10 }}>
             <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.ink }}>{`${t('chat')} · ${t(`service.${job.service}`)}`}</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.ink }}>{`${t('chat')} · ${serviceName(job, t)}`}</Text>
               <Pressable onPress={() => setOpen(false)} hitSlop={10} accessibilityLabel={t('closeChatBubble')}>
                 <MaterialCommunityIcons name="close" size={24} color={colors.primary} />
               </Pressable>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import * as data from '../data';
-import { SERVICES } from '../services';
+import { serviceName, SERVICES } from '../services';
 import { Job, Role, ServicePost } from '../types';
 import { Button, Card, colors, H, IconCircle, P, useLang } from '../ui';
 
@@ -46,7 +46,7 @@ export function History({ role, userId, jobs, onOpenJob, onBack }: {
               <IconCircle name={icon} tone={it.kind === 'post' ? 'accent' : 'primary'} />
               <View style={{ flex: 1 }}>
                 <P small muted>{`${it.at.slice(0, 10)} · ${it.kind === 'job' ? jobLabel(it.job) : t('historyPost')}`}</P>
-                <P>{it.kind === 'job' ? t(`service.${service}`) : it.post.title}</P>
+                <P>{it.kind === 'job' ? serviceName(it.job, t) : it.post.title}</P>
                 <P small muted>
                   {it.kind === 'job'
                     ? t(`stage.${it.job.stage}`)

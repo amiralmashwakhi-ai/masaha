@@ -19,6 +19,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
   const [visits, setVisits] = useState(1);
   const [length, setLength] = useState<VisitLength>('upTo4h');
   const [withReport, setWithReport] = useState(true);
+  const [custom, setCustom] = useState('');
   const set = (k: keyof PlotLocation) => (v: string) => setLoc({ ...loc, [k]: v });
 
   const info = SERVICES.find((x) => x.id === service);
@@ -31,7 +32,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
             key={sv.id}
             icon={sv.icon}
             title={t(`service.${sv.id}`)}
-            subtitle={`${sv.baseJod[0]}–${sv.baseJod[1]} ${t('jod')}${sv.perVisit ? ` ${t('perVisit')}` : ''}`}
+            subtitle={sv.id === 'other' ? t('otherHint') : `${sv.baseJod[0]}–${sv.baseJod[1]} ${t('jod')}${sv.perVisit ? ` ${t('perVisit')}` : ''}`}
             onPress={() => setService(sv.id)}
           />
         ))}
@@ -45,6 +46,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
     <ScrollView>
       <View style={{ alignItems: 'center', marginBottom: 6 }}><IconCircle name={info.icon} size={56} /></View>
       <H>{t(`service.${service}`)}</H>
+      {service === 'other' && <Field label={t('otherName')} value={custom} onChange={setCustom} />}
       <P muted>{t('location')}</P>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 }}>
         {GOVERNORATES.map((g) => (
@@ -93,12 +95,15 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
         {info.docs.map((d) => <P key={d} muted>{`• ${t(`doc.${d}`)}`}</P>)}
       </Card>
       <Card>
-        <P>{`${t('estimate')}: ${range[0] * (info.perVisit ? visits : 1)}–${range[1] * (info.perVisit ? visits : 1)} ${t('jod')}`}</P>
+        {service === 'other'
+          ? <P>{t('otherPrice')}</P>
+          : <P>{`${t('estimate')}: ${range[0] * (info.perVisit ? visits : 1)}–${range[1] * (info.perVisit ? visits : 1)} ${t('jod')}`}</P>}
         <P muted small>{t('feesNote')}</P>
         {info.perVisit && <P muted small>{`${range[0]}–${range[1]} ${t('jod')} ${t('perVisit')} × ${visits}`}</P>}
       </Card>
       <Button
         title={t('submit')}
+        disabled={service === 'other' && !custom.trim()}
         onPress={() =>
           onDone({
             id: String(Date.now()),
@@ -108,6 +113,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
             visits: info.perVisit ? visits : undefined,
             visitLength: info.perVisit ? length : undefined,
             withReport: info.perVisit ? withReport : undefined,
+            customService: service === 'other' ? custom.trim() : undefined,
             createdAt: new Date().toISOString(),
             stage: 'requested',
           })

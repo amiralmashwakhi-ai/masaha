@@ -37,7 +37,7 @@ export function EditProvider({ provider, onSave, onBack }: {
       <Field label={t('equipmentLines')} value={equipment} onChange={setEquipment} multiline />
       <Card>
         <P>{t('servicesOffered')}</P>
-        {SERVICES.map((sv) => (
+        {SERVICES.filter((sv) => sv.id !== 'other').map((sv) => (
           <Button key={sv.id} title={t(`service.${sv.id}`)} onPress={() => setServices(toggle(services, sv.id))} secondary={!services.includes(sv.id)} />
         ))}
       </Card>

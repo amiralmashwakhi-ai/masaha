@@ -18,6 +18,8 @@ export const SERVICES: ServiceInfo[] = [
   { id: 'asBuilt', icon: 'home-city-outline', baseJod: [200, 500], docs: ['permit', 'buildingPlans', 'deed'] },
   { id: 'sitePlan', icon: 'file-document-outline', baseJod: [50, 150], docs: ['deed', 'id'] },
   { id: 'dispute', icon: 'scale-balance', baseJod: [250, 700], docs: ['deed', 'plotPlan', 'id'] },
+  // Anything not listed; priced by the surveyors' quotes.
+  { id: 'other', icon: 'dots-horizontal-circle-outline', baseJod: [0, 0], docs: ['deed', 'id'] },
 ];
 
 // Staking is priced per visit by how long the visit takes; placeholder ranges until confirmed.
@@ -26,6 +28,10 @@ export const VISIT_LENGTHS: { id: VisitLength; baseJod: [number, number] }[] = [
   { id: 'upTo4h', baseJod: [100, 200] },
   { id: 'fullDay', baseJod: [150, 400] },
 ];
+
+// A job's service name: the customer's own words for "other".
+export const serviceName = (j: { service: ServiceId; customService?: string }, t: (k: string) => string) =>
+  j.service === 'other' && j.customService ? j.customService : t(`service.${j.service}`);
 
 export const GOVERNORATES = [
   'amman', 'zarqa', 'irbid', 'balqa', 'madaba', 'jerash',
