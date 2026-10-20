@@ -45,7 +45,7 @@ export interface Review {
   by: string;
   stars: 1 | 2 | 3 | 4 | 5;
   text: string;
-  jobService: ServiceId;
+  jobService?: ServiceId;
   at: string;
 }
 
@@ -80,6 +80,8 @@ export interface Milestone {
 }
 
 export interface Job extends ServiceRequest {
+  customerId: string;
+  providerId?: string; // provider of the accepted quote
   // Reviews left on this job, one per side.
   reviews: { by: Role; stars: Review['stars']; text: string }[];
   quotes: Quote[];

@@ -18,7 +18,7 @@ export function ReviewList({ reviews }: { reviews: Review[] }) {
       {open && reviews.map((r, i) => (
         <Card key={i}>
           <P>{`${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}  ${r.by}`}</P>
-          <P muted>{`${t(`service.${r.jobService}`)} · ${r.at}`}</P>
+          <P muted>{r.jobService ? `${t(`service.${r.jobService}`)} · ${r.at}` : r.at}</P>
           <P>{r.text}</P>
         </Card>
       ))}

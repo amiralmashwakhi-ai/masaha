@@ -1,33 +1,30 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useMemo, useState } from 'react';
-import { loadProfile, Profile, signOut, useSession } from './src/auth';
-import { CreateProfile, SignIn } from './src/screens/SignIn';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { loadProfile, Profile, signOut, useSession } from './src/auth';
+import * as data from './src/data';
 import { applyDirection, makeT } from './src/i18n';
-import { DEFAULT_MILESTONES, round } from './src/money';
-import { mockGateway } from './src/payments';
+import { EditProvider } from './src/screens/EditProvider';
 import { Home } from './src/screens/Home';
 import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
 import { ProviderProfile } from './src/screens/ProviderProfile';
 import { RequestWizard } from './src/screens/RequestWizard';
-import { SEED_CUSTOMER_REVIEWS, SEED_PROVIDERS } from './src/seed';
-import { Job, JobEvent, Lang, Role } from './src/types';
-import { colors, LangCtx } from './src/ui';
+import { CreateProfile, SignIn } from './src/screens/SignIn';
+import { Job, Lang, Provider, Role } from './src/types';
+import { colors, LangCtx, P } from './src/ui';
 
 type Screen =
-  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard' }
+  | { name: 'home' } | { name: 'jobs' } | { name: 'wizard' } | { name: 'editProvider' }
   | { name: 'job'; id: string } | { name: 'profile'; id: string; back: Screen };
-
-// The prototype acts as the first seeded provider when in provider mode.
-const ME_PROVIDER = SEED_PROVIDERS[0].id;
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('ar');
   const [role, setRole] = useState<Role>('customer');
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
-  // Local state only until the backend is connected.
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [error, setError] = useState('');
 
   const { session, loading } = useSession();
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
@@ -38,73 +35,76 @@ export default function App() {
 
   const ctx = useMemo(() => ({ lang, t: makeT(lang), rtl: lang === 'ar' }), [lang]);
 
+  const refresh = useCallback(async () => {
+    if (!userId || !profile) return;
+    try {
+      const list = await data.listJobs(role, userId);
+      setJobs(list);
+      const ids = new Set(list.flatMap((j) => j.quotes.map((q) => q.providerId)));
+      if (role === 'provider') ids.add(userId);
+      setProviders(await data.loadProviders([...ids]));
+      setError('');
+    } catch {
+      setError(ctx.t('somethingWrong'));
+    }
+  }, [userId, profile, role, ctx]);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  // Runs a database action, then reloads so the screen always shows the stored state.
+  const run = (fn: () => Promise<unknown>) => async () => {
+    try { await fn(); } catch { setError(ctx.t('somethingWrong')); }
+    await refresh();
+  };
+
   const toggleLang = () => {
     const next = lang === 'ar' ? 'en' : 'ar';
     applyDirection(next);
     setLang(next);
   };
 
-  const update = (id: string, by: Role, kind: JobEvent['kind'], text: string, fn: (j: Job) => Job) =>
-    setJobs((all) => all.map((j) =>
-      j.id === id ? { ...fn(j), events: [...j.events, { at: new Date().toISOString(), by, kind, text }] } : j));
-
-  const priceOf = (j: Job) => j.quotes.find((q) => q.id === j.acceptedQuoteId)?.priceJod ?? 0;
-
   const actions: JobActions = {
-    sendQuote: (id, priceJod, days, scope) =>
-      update(id, 'provider', 'quote', `${priceJod} JOD / ${days}d`, (j) => ({
-        ...j, stage: 'quoted',
-        quotes: [...j.quotes, { id: String(Date.now()), providerId: ME_PROVIDER, priceJod, days, scope }],
-      })),
-    acceptQuote: (id, quoteId) =>
-      update(id, 'customer', 'stage', 'quote accepted', (j) => ({ ...j, acceptedQuoteId: quoteId })),
-    sign: (id, by) =>
-      update(id, by, 'stage', 'agreement signed', (j) => {
-        const signedBy = [...j.signedBy, by];
-        return { ...j, signedBy, stage: signedBy.length === 2 ? 'agreed' : j.stage };
-      }),
-    payEscrow: (id) => {
-      const j = jobs.find((x) => x.id === id);
-      if (!j) return;
-      mockGateway.hold(id, priceOf(j)).then(({ ref }) =>
-        update(id, 'customer', 'stage', `escrow ${priceOf(j)} JOD (${ref})`, (x) => ({
-          ...x, stage: 'visitScheduled',
-          milestones: x.milestones.map((m) => ({ ...m, status: 'held' })),
-        })));
+    sendQuote: (id, priceJod, days, scope) => { if (userId) run(() => data.sendQuote(id, userId, priceJod, days, scope))(); },
+    acceptQuote: (_id, quoteId) => run(() => data.acceptQuote(quoteId))(),
+    sign: (id) => run(() => data.signAgreement(id))(),
+    payEscrow: (id) => run(() => data.payEscrow(id))(),
+    advance: (id) => run(() => data.advanceStage(id))(),
+    release: (id, key) => run(() => data.releaseMilestone(id, key))(),
+    review: (id, by, stars, text) => {
+      const job = jobs.find((j) => j.id === id);
+      if (job && userId && profile) run(() => data.leaveReview(job, userId, by, profile.full_name, stars, text))();
     },
-    release: (id, key) => {
-      const j = jobs.find((x) => x.id === id);
-      const m = j?.milestones.find((x) => x.key === key);
-      if (!j || !m) return;
-      const amount = round(priceOf(j) * m.share);
-      mockGateway.release(id, amount).then(() =>
-        update(id, 'customer', 'stage', `released ${amount} JOD`, (x) => ({
-          ...x, stage: key === 'delivery' ? 'done' : 'drafting',
-          milestones: x.milestones.map((y) => (y.key === key ? { ...y, status: 'released' } : y)),
-        })));
-    },
-    review: (id, by, stars, text) =>
-      update(id, by, 'message', `review ${stars}★`, (j) => ({ ...j, reviews: [...j.reviews, { by, stars, text }] })),
   };
 
   const current = screen.name === 'job' ? jobs.find((j) => j.id === screen.id) : undefined;
-  const provider = screen.name === 'profile' ? SEED_PROVIDERS.find((p) => p.id === screen.id) : undefined;
+  const viewedProvider = screen.name === 'profile' ? providers.find((p) => p.id === screen.id) : undefined;
+  const me = providers.find((p) => p.id === userId);
+  const ready = session && profile;
 
   return (
     <LangCtx.Provider value={ctx}>
       <SafeAreaView style={styles.safe}>
         <View style={styles.body}>
           {!loading && !session && <SignIn />}
+          {session && profile === undefined && <P muted>{ctx.t('loading')}</P>}
           {session && profile === null && userId && <CreateProfile userId={userId} onDone={refreshProfile} />}
-          {session && profile && screen.name === 'home' && (
+          {!!error && ready && <P>{error}</P>}
+          {ready && screen.name === 'home' && (
             <Home
+              role={role}
               onToggleLang={toggleLang}
               onSignOut={() => { signOut(); setScreen({ name: 'home' }); }}
               onRole={() => setScreen({ name: 'jobs' })}
-              role={role}
+              onEditProfile={role === 'provider' && me ? () => setScreen({ name: 'editProvider' }) : undefined}
             />
           )}
-          {session && profile && screen.name === 'jobs' && (
+          {ready && screen.name === 'editProvider' && me && (
+            <EditProvider
+              provider={me}
+              onSave={async (p) => { await data.saveProvider(p); await refresh(); }}
+              onBack={() => setScreen({ name: 'home' })}
+            />
+          )}
+          {ready && screen.name === 'jobs' && (
             <JobList
               role={role}
               jobs={jobs}
@@ -113,31 +113,28 @@ export default function App() {
               onBack={() => setScreen({ name: 'home' })}
             />
           )}
-          {session && profile && screen.name === 'wizard' && (
+          {ready && screen.name === 'wizard' && userId && (
             <RequestWizard
               onCancel={() => setScreen({ name: 'jobs' })}
-              onDone={(r) => {
-                setJobs([{
-                  ...r, quotes: [], reviews: [], signedBy: [], milestones: DEFAULT_MILESTONES,
-                  events: [{ at: r.createdAt, by: 'customer', kind: 'stage', text: 'request created' }],
-                }, ...jobs]);
+              onDone={async (r) => {
+                await run(() => data.createJob(userId, r))();
                 setScreen({ name: 'jobs' });
               }}
             />
           )}
-          {session && profile && current && (
+          {ready && current && (
             <JobDetail
               job={current}
               role={role}
-              providers={SEED_PROVIDERS}
-              customerReviews={SEED_CUSTOMER_REVIEWS}
+              providers={providers}
+              loadCustomerReviews={data.reviewsAbout}
               actions={actions}
               onProfile={(id) => setScreen({ name: 'profile', id, back: screen })}
               onBack={() => setScreen({ name: 'jobs' })}
             />
           )}
-          {session && profile && provider && screen.name === 'profile' && (
-            <ProviderProfile provider={provider} onBack={() => setScreen(screen.back)} />
+          {ready && viewedProvider && screen.name === 'profile' && (
+            <ProviderProfile provider={viewedProvider} onBack={() => setScreen(screen.back)} />
           )}
         </View>
         <StatusBar style="dark" />

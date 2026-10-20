@@ -41,19 +41,20 @@ export function Card({ children, onPress }: { children: React.ReactNode; onPress
   return <Pressable onPress={onPress} style={s.card}>{children}</Pressable>;
 }
 
-export function Field({ label, value, onChange, numeric, secure }: {
-  label: string; value: string; onChange: (v: string) => void; numeric?: boolean; secure?: boolean;
+export function Field({ label, value, onChange, numeric, secure, multiline }: {
+  label: string; value: string; onChange: (v: string) => void; numeric?: boolean; secure?: boolean; multiline?: boolean;
 }) {
   const { rtl } = useLang();
   return (
     <View style={{ marginBottom: 12 }}>
       <Text style={[s.label, rtl && s.rtl]}>{label}</Text>
       <TextInput
-        style={[s.input, rtl && s.rtl]}
+        style={[s.input, multiline && { minHeight: 90, textAlignVertical: 'top' }, rtl && s.rtl]}
         value={value}
         onChangeText={onChange}
         keyboardType={numeric ? 'numeric' : 'default'}
         secureTextEntry={secure}
+        multiline={multiline}
         autoCapitalize="none"
       />
     </View>

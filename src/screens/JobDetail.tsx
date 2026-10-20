@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { split } from '../money';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
@@ -10,12 +10,13 @@ export interface JobActions {
   acceptQuote: (jobId: string, quoteId: string) => void;
   sign: (jobId: string, role: Role) => void;
   payEscrow: (jobId: string) => void;
+  advance: (jobId: string) => void;
   release: (jobId: string, key: 'fieldWork' | 'delivery') => void;
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, providers, customerReviews, actions, onProfile, onBack }: {
-  job: Job; role: Role; providers: Provider[]; customerReviews: Review[]; actions: JobActions;
+export function JobDetail({ job, role, providers, loadCustomerReviews, actions, onProfile, onBack }: {
+  job: Job; role: Role; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions;
   onProfile: (id: string) => void; onBack: () => void;
 }) {
   const { t } = useLang();
@@ -24,6 +25,10 @@ export function JobDetail({ job, role, providers, customerReviews, actions, onPr
   const [scope, setScope] = useState('');
   const [stars, setStars] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [reviewText, setReviewText] = useState('');
+  const [customerReviews, setCustomerReviews] = useState<Review[]>([]);
+  useEffect(() => {
+    if (role === 'provider') loadCustomerReviews(job.customerId).then(setCustomerReviews);
+  }, [job.customerId, role]);
   const myReview = job.reviews.find((r) => r.by === role);
   const theirReview = job.reviews.find((r) => r.by !== role);
   const accepted = job.quotes.find((q) => q.id === job.acceptedQuoteId);
@@ -51,7 +56,7 @@ export function JobDetail({ job, role, providers, customerReviews, actions, onPr
               </View>
             );
           })}
-          {role === 'provider' && (
+          {role === 'provider' && job.quotes.length === 0 && (
             <View style={{ marginTop: 12 }}>
               <Field label={t('price')} value={price} onChange={setPrice} numeric />
               <Field label={t('days')} value={days} onChange={setDays} numeric />
@@ -99,6 +104,13 @@ export function JobDetail({ job, role, providers, customerReviews, actions, onPr
             <Button title={`${t('payEscrow')} (${accepted.priceJod} ${t('jod')})`} onPress={() => actions.payEscrow(job.id)} />
           )}
         </Card>
+      )}
+
+      {role === 'provider' && accepted && (job.stage === 'visitScheduled' || job.stage === 'drafting') && (
+        <Button
+          title={job.stage === 'visitScheduled' ? t('markFieldWork') : t('markSubmitted')}
+          onPress={() => actions.advance(job.id)}
+        />
       )}
 
       {role === 'provider' && (
