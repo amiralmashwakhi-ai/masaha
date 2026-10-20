@@ -354,6 +354,9 @@ export async function deleteMyAccount(): Promise<'ok' | 'activeJobs' | 'error'> 
 }
 
 // Licence check: the document goes to the private "licenses" bucket, then the operator reviews it.
+// A licence number can belong to one account only (unique index on providers.license_no).
+export const isLicenseTaken = (e: unknown) => (e as { code?: string })?.code === '23505';
+
 export async function submitLicense(userId: string, uri: string, name: string, mime: string, licenseNo: string) {
   const body = await (await fetch(uri)).arrayBuffer();
   const path = `${userId}/${Date.now()}-${name.replace(/[^\w.\-]+/g, '_').slice(-60) || 'licence'}`;

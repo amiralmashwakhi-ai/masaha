@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import * as data from '../data';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Provider, ServiceId } from '../types';
 import { BackButton, Button, Card, Field, H, P, useLang } from '../ui';
@@ -57,8 +58,8 @@ export function EditProvider({ provider, onSave, onBack }: {
               services, otherServices: other.trim() || undefined, governorates: govs,
             });
             setStatus(t('saved'));
-          } catch {
-            setStatus(t('somethingWrong'));
+          } catch (e) {
+            setStatus(data.isLicenseTaken(e) ? t('licenseTaken') : t('somethingWrong'));
           }
         }}
       />

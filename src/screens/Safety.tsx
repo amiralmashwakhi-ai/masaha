@@ -150,7 +150,7 @@ export function LicenseCard({ userId }: { userId: string }) {
       {(status === 'none' || status === 'rejected') && (
         <>
           <Field label={t('licenseNo')} value={licenseNo} onChange={setLicenseNo} />
-          <Button title={t('uploadLicense')} icon="file-upload-outline" disabled={busy} onPress={async () => {
+          <Button title={t('uploadLicense')} icon="file-upload-outline" disabled={busy || !licenseNo.trim()} onPress={async () => {
             const r = await DocumentPicker.getDocumentAsync({ type: DOC_TYPES, copyToCacheDirectory: true });
             if (r.canceled || !r.assets[0]) return;
             setBusy(true); setMsg(t('uploading'));
@@ -158,7 +158,7 @@ export function LicenseCard({ userId }: { userId: string }) {
               const a = r.assets[0];
               await data.submitLicense(userId, a.uri, a.name, a.mimeType ?? 'application/pdf', licenseNo);
               setStatus('pending'); setMsg('');
-            } catch { setMsg(t('uploadFailed')); } finally { setBusy(false); }
+            } catch (e) { setMsg(data.isLicenseTaken(e) ? t('licenseTaken') : t('uploadFailed')); } finally { setBusy(false); }
           }} />
         </>
       )}

@@ -357,6 +357,7 @@ const en = {
   'phase.open': 'Awaiting quotes',
   'phase.active': 'In progress',
   'phase.closed': 'Finished or cancelled',
+  'licenseTaken': 'This licence number is already registered to another account. Contact Masaha if this is a mistake.',
 };
 
 type Key = keyof typeof en;
@@ -717,6 +718,7 @@ const ar: Record<Key, string> = {
   'phase.open': 'بانتظار العروض',
   'phase.active': 'قيد التنفيذ',
   'phase.closed': 'منتهية أو ملغاة',
+  'licenseTaken': 'رقم الرخصة هذا مسجّل في حساب آخر. تواصل مع مساحة إذا كان هذا خطأ.',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };
