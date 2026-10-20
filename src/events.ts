@@ -12,6 +12,8 @@ export function eventText(e: JobEvent, t: T): string {
   if (m) return `${t('ev.quote')}: ${tidy(m[1])} ${t('jod')} / ${m[2]} ${t('days')}`;
   m = s.match(/^released ([\d.]+) JOD \((\w+)\)$/);
   if (m) return `${t('ev.released')} ${tidy(m[1])} ${t('jod')} (${t(`ms.${m[2]}`)})`;
+  m = s.match(/^auto released ([\d.]+) JOD after 5 days$/);
+  if (m) return `${t('ev.autoReleased')}: ${tidy(m[1])} ${t('jod')}`;
   m = s.match(/^dispute opened: ([\s\S]*)$/);
   if (m) return `${t('ev.disputeOpened')}: ${m[1]}`;
   m = s.match(/^correction requested: ([\s\S]*)$/);
@@ -32,6 +34,12 @@ export function eventText(e: JobEvent, t: T): string {
 export function correctionNote(events: JobEvent[]): string | undefined {
   const last = [...events].reverse().find((e) => e.text.startsWith('correction requested: ') || e.text.startsWith('dispute'));
   return last?.text.startsWith('correction requested: ') ? last.text.slice('correction requested: '.length) : undefined;
+}
+
+// When the final payment releases itself (5 days after delivery).
+export function autoReleaseAt(events: JobEvent[]): Date | undefined {
+  const at = [...events].reverse().find((e) => e.text === 'submitted')?.at;
+  return at ? new Date(Date.parse(at) + 5 * 24 * 3600 * 1000) : undefined;
 }
 
 export function lastCorrectionAt(events: JobEvent[]): string | undefined {

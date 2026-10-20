@@ -330,6 +330,14 @@ export async function unblock(blockedId: string) {
 }
 
 // Cancel before payment; dispute after payment (money stays held until the operator decides).
+// Phone numbers of both sides, available once the money is held.
+export async function jobContacts(jobId: string) {
+  const { data, error } = await supabase.rpc('job_contacts', { p_job: jobId });
+  if (error) throw error;
+  const row = (data as { customer_phone: string | null; provider_phone: string | null }[])[0];
+  return { customer: row?.customer_phone ?? undefined, provider: row?.provider_phone ?? undefined };
+}
+
 export const deleteJob = (jobId: string) => rpc('delete_job', { p_job: jobId });
 export const unsignAgreement = (jobId: string) => rpc('unsign_agreement', { p_job: jobId });
 export const cancelJob = (jobId: string) => rpc('cancel_job', { p_job: jobId });

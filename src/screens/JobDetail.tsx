@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { correctionNote, eventText, lastCorrectionAt } from '../events';
+import { Linking, ScrollView, Text, View } from 'react-native';
+import * as data from '../data';
+import { autoReleaseAt, correctionNote, eventText, lastCorrectionAt } from '../events';
 import { fmt, split } from '../money';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
 import { ChatBubble } from './ChatCard';
@@ -41,6 +42,14 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   const fullySigned = job.signedBy.includes('customer') && job.signedBy.includes('provider');
   const paid = job.milestones.some((m) => m.status !== 'pending');
   const [freshFiles, setFreshFiles] = useState(0);
+  // Phone numbers show to both sides once the money is held.
+  const [contacts, setContacts] = useState<{ customer?: string; provider?: string } | null>(null);
+  const held = job.milestones.some((m) => m.status === 'held' || m.status === 'released') && job.stage !== 'cancelled';
+  useEffect(() => {
+    if (held) data.jobContacts(job.id).then(setContacts).catch(() => setContacts(null));
+  }, [job.id, held]);
+  const otherPhone = role === 'customer' ? contacts?.provider : contacts?.customer;
+  const releaseAt = job.stage === 'submitted' ? autoReleaseAt(job.events) : undefined;
   const needsFiles = !(job.service === 'staking' && job.withReport === false);
   // A signature can be withdrawn until 3 minutes after both sides signed, and never after payment.
   const [now, setNow] = useState(Date.now());
@@ -126,6 +135,13 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         </Card>
       )}
 
+      {held && otherPhone && (
+        <Card>
+          <P>{role === 'customer' ? t('providerPhone') : t('customerPhone')}</P>
+          <Button title={otherPhone} icon="phone" secondary onPress={() => Linking.openURL(`tel:${otherPhone}`)} />
+        </Card>
+      )}
+
       {accepted && fullySigned && (
         <Card>
           <P>{t('escrow')}</P>
@@ -133,6 +149,9 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
             <View key={m.key} style={{ marginTop: 6 }}>
               <P>{`${t(`ms.${m.key}`)}: ${fmt(accepted.priceJod * m.share)} ${t('jod')}`}</P>
               <P muted>{t(`mss.${m.status}`)}</P>
+              {m.key === 'delivery' && m.status === 'held' && releaseAt && (
+                <P muted small>{t('autoReleaseOn').replace('{d}', releaseAt.toISOString().slice(0, 10))}</P>
+              )}
               {role === 'customer' && m.status === 'held' && (
                 <Button title={t('release')} onPress={() => actions.release(job.id, m.key)} secondary />
               )}

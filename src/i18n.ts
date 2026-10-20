@@ -318,6 +318,10 @@ const en = {
   'ev.settled': 'Dispute ended amicably; the job continues',
   'searchPosts': 'Search services, providers or places',
   'searchJobs': 'Search by service, area, basin or plot',
+  'providerPhone': 'Provider\'s phone',
+  'customerPhone': 'Customer\'s phone',
+  'autoReleaseOn': 'If you neither release nor open a dispute, this payment goes to the provider automatically on {d}.',
+  'ev.autoReleased': 'Released automatically after 5 days',
 };
 
 type Key = keyof typeof en;
@@ -639,6 +643,10 @@ const ar: Record<Key, string> = {
   'ev.settled': 'انتهى النزاع ودياً ويستمر العمل',
   'searchPosts': 'ابحث عن خدمة أو مزوّد أو منطقة',
   'searchJobs': 'ابحث بالخدمة أو المنطقة أو الحوض أو القطعة',
+  'providerPhone': 'هاتف المزوّد',
+  'customerPhone': 'هاتف العميل',
+  'autoReleaseOn': 'إن لم تحوّل الدفعة أو تفتح نزاعاً، تتحوّل للمزوّد تلقائياً بتاريخ {d}.',
+  'ev.autoReleased': 'تحويل تلقائي بعد ٥ أيام',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };
