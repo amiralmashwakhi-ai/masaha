@@ -13,6 +13,8 @@ import { Menu } from './src/screens/Menu';
 import { PostEditor, PostFeed } from './src/screens/Posts';
 import { Notifications, OperatorPanel } from './src/screens/Safety';
 import { Settings } from './src/screens/Settings';
+import { Chats } from './src/screens/Chats';
+import { Tab, TabBar } from './src/screens/TabBar';
 import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
 import { ProviderProfile } from './src/screens/ProviderProfile';
@@ -24,7 +26,8 @@ import { colors, Header, LangCtx, P, setDark } from './src/ui';
 type Screen =
   | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId; providerId?: string } | { name: 'editProvider' } | { name: 'settings' }
   | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'operator' }
-  | { name: 'job'; id: string; back?: Screen } | { name: 'profile'; id: string; back: Screen };
+  | { name: 'chats' }
+  | { name: 'job'; id: string; back?: Screen; chat?: boolean } | { name: 'profile'; id: string; back: Screen };
 
 const PREFS = { lang: 'masaha.lang', dark: 'masaha.dark' };
 
@@ -38,6 +41,7 @@ export default function App() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [error, setError] = useState('');
   const [unread, setUnread] = useState(0);
+  const [chatUnread, setChatUnread] = useState(0);
   const [operator, setOperator] = useState(false);
   // A job opened from the admin panel may not be in the user's own list.
   const [extraJob, setExtraJob] = useState<Job | null>(null);
@@ -85,9 +89,12 @@ export default function App() {
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
-    if (!userId || !profile) { setOperator(false); setUnread(0); return; }
+    if (!userId || !profile) { setOperator(false); setUnread(0); setChatUnread(0); return; }
     data.isOperator(userId).then(setOperator).catch(() => setOperator(false));
-    const poll = () => data.unreadCount().then(setUnread).catch(() => {});
+    const poll = () => {
+      data.unreadCount().then(setUnread).catch(() => {});
+      data.chatUnreadTotal().then(setChatUnread).catch(() => {});
+    };
     poll();
     const timer = setInterval(poll, 30000);
     return () => clearInterval(timer);
@@ -145,13 +152,24 @@ export default function App() {
     });
     return () => sub.remove();
   }, []);
-  const openAnyJob = async (id: string) => {
+  const openAnyJob = async (id: string, chat?: boolean) => {
     if (!jobs.some((j) => j.id === id)) {
       try { setExtraJob(await data.getJob(id)); } catch { setError(ctx.t('somethingWrong')); return; }
     }
-    setScreen({ name: 'job', id, back: screen });
+    setScreen({ name: 'job', id, back: screen, chat });
   };
   const requestService = (service: ServiceId) => setScreen({ name: 'wizard', service });
+  const activeTab: Tab | undefined = screen.name === 'home' ? 'home' : screen.name === 'chats' ? 'chats'
+    : screen.name === 'wizard' || screen.name === 'newPost' ? 'add'
+    : screen.name === 'jobs' || (screen.name === 'profile' && screen.id === userId) ? 'mine'
+    : screen.name === 'settings' ? 'account' : undefined;
+  const onTab = (tab: Tab) => {
+    if (tab === 'home') goHome();
+    else if (tab === 'chats') setScreen({ name: 'chats' });
+    else if (tab === 'add') setScreen(role === 'provider' ? (me ? { name: 'newPost' } : { name: 'editProvider' }) : { name: 'wizard' });
+    else if (tab === 'mine') { if (role === 'provider' && me) openProfile(me.id); else setScreen({ name: 'jobs' }); }
+    else setScreen({ name: 'settings' });
+  };
 
   return (
     <SafeAreaProvider>
@@ -255,6 +273,7 @@ export default function App() {
                   if (extraJob?.id === current.id) data.getJob(current.id).then(setExtraJob).catch(() => {});
                 }}
                 onProfile={openProfile}
+                openChat={screen.chat}
                 onBack={() => setScreen(screen.back ?? { name: 'jobs' })}
               />
             )}
@@ -271,7 +290,9 @@ export default function App() {
                 onBack={() => setScreen(screen.back)}
               />
             )}
+            {ready && screen.name === 'chats' && <Chats onOpen={(id) => { setChatUnread(0); openAnyJob(id, true); }} />}
           </View>
+          {ready && <TabBar role={role} active={activeTab} chatUnread={chatUnread} onTab={onTab} />}
           <Menu
             open={menuOpen}
             onClose={() => setMenuOpen(false)}

@@ -22,9 +22,9 @@ export interface JobActions {
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, onBack }: {
+export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, openChat, onBack }: {
   job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions; onChanged: () => void;
-  onProfile: (id: string) => void; onBack: () => void;
+  onProfile: (id: string) => void; openChat?: boolean; onBack: () => void;
 }) {
   const { t } = useLang();
   const [price, setPrice] = useState('');
@@ -43,7 +43,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   const fullySigned = job.signedBy.includes('customer') && job.signedBy.includes('provider');
   const paid = job.milestones.some((m) => m.status !== 'pending');
   const [freshFiles, setFreshFiles] = useState(0);
-  const [chatSignal, setChatSignal] = useState(0);
+  const [chatSignal, setChatSignal] = useState(openChat ? 1 : 0);
   // Phone numbers show to both sides once the money is held.
   const [contacts, setContacts] = useState<{ customer?: string; provider?: string } | null>(null);
   const held = job.milestones.some((m) => m.status === 'held' || m.status === 'released') && job.stage !== 'cancelled';

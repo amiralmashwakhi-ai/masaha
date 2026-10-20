@@ -442,6 +442,38 @@ export async function uploadDeliverable(jobId: string, userId: string, uri: stri
 
 // Chat activity on one job, for the bubble's badge.
 const CHAT_KINDS = ['chatRequest', 'chatAccepted', 'chatMessage'];
+export interface ChatSummary {
+  id: string; jobId: string; service: ServiceId; customService?: string; otherName: string; status: Chat['status']; unread: number;
+}
+
+// All of the user's chats, newest first, with unread chat notifications per job.
+export async function listMyChats(): Promise<ChatSummary[]> {
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  const { data, error } = await supabase.from('chats')
+    .select('id, job_id, customer_id, provider_id, status, jobs(service, custom_service)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  const rows = data as unknown as { id: string; job_id: string; customer_id: string; provider_id: string; status: Chat['status'];
+    jobs: { service: ServiceId; custom_service: string | null } | null }[];
+  const ids = [...new Set(rows.map((c) => c.provider_id))];
+  const { data: names } = ids.length
+    ? await supabase.from('providers').select('id, display_name').in('id', ids)
+    : { data: [] as { id: string; display_name: string }[] };
+  const { data: notes } = await supabase.from('notifications').select('job_id').in('kind', CHAT_KINDS).is('read_at', null);
+  return rows.map((c) => ({
+    id: c.id, jobId: c.job_id, service: c.jobs?.service ?? 'other', customService: c.jobs?.custom_service ?? undefined,
+    otherName: c.customer_id === me ? names?.find((n) => n.id === c.provider_id)?.display_name ?? '' : '',
+    status: c.status, unread: (notes ?? []).filter((n) => n.job_id === c.job_id).length,
+  }));
+}
+
+export async function chatUnreadTotal() {
+  const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true })
+    .in('kind', CHAT_KINDS).is('read_at', null);
+  return count ?? 0;
+}
+
 export async function chatUnread(jobId: string) {
   const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true })
     .eq('job_id', jobId).in('kind', CHAT_KINDS).is('read_at', null);

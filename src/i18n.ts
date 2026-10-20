@@ -333,6 +333,17 @@ const en = {
   'note.directRequest': 'A customer requested a service from you directly',
   'home': 'Home',
   'otherServicesLabel': 'Other services you offer',
+  'myChats': 'My chats',
+  'addService': 'Add service',
+  'addRequest': 'Add request',
+  'myServices': 'My services',
+  'myRequests': 'My requests',
+  'myAccount': 'My account',
+  'noChats': 'No chats yet.',
+  'newMessages': 'new',
+  'chatStatus.pending': 'Waiting for approval',
+  'chatStatus.accepted': 'Open',
+  'chatStatus.declined': 'Declined',
 };
 
 type Key = keyof typeof en;
@@ -669,6 +680,17 @@ const ar: Record<Key, string> = {
   'note.directRequest': 'طلب مباشر لك من عميل',
   'home': 'الرئيسية',
   'otherServicesLabel': 'خدمات أخرى تقدّمها',
+  'myChats': 'محادثاتي',
+  'addService': 'أضف خدمة',
+  'addRequest': 'أضف طلب',
+  'myServices': 'خدماتي',
+  'myRequests': 'طلباتي',
+  'myAccount': 'حسابي',
+  'noChats': 'لا توجد محادثات بعد.',
+  'newMessages': 'جديدة',
+  'chatStatus.pending': 'بانتظار الموافقة',
+  'chatStatus.accepted': 'مفتوحة',
+  'chatStatus.declined': 'مرفوضة',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };
