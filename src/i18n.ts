@@ -386,6 +386,7 @@ const en = {
   'submitCount': 'Send request ({n} services)',
   'sameProject': 'Part of a project: {n} services',
   'projectOther': 'Other services for the same plot',
+  'note.licensePending': 'New licence to review',
 };
 
 type Key = keyof typeof en;
@@ -775,6 +776,7 @@ const ar: Record<Key, string> = {
   'submitCount': 'أرسل الطلب ({n} خدمات)',
   'sameProject': 'ضمن مشروع: {n} خدمات',
   'projectOther': 'خدمات أخرى لنفس القطعة',
+  'note.licensePending': 'رخصة جديدة بانتظار المراجعة',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

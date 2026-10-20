@@ -34,10 +34,10 @@ export function ReportBlock({ reporterId, userId, postId, chatId, canBlock, onBl
 const NOTE_ICON: Record<string, IconName> = {
   newJob: 'briefcase-plus-outline', directRequest: 'account-arrow-right-outline', newQuote: 'cash-multiple', jobUpdate: 'progress-check',
   chatRequest: 'chat-question-outline', chatAccepted: 'chat-processing-outline', chatMessage: 'chat-outline',
-  verified: 'check-decagram', rejected: 'alert-circle-outline',
+  verified: 'check-decagram', rejected: 'alert-circle-outline', licensePending: 'card-account-details-outline',
 };
 
-export function Notifications({ onOpenJob, onBack }: { onOpenJob: (id: string) => void; onBack: () => void }) {
+export function Notifications({ onOpenJob, onOpenOperator, onBack }: { onOpenJob: (id: string) => void; onOpenOperator?: () => void; onBack: () => void }) {
   const { t } = useLang();
   const [items, setItems] = useState<data.AppNotification[] | null>(null);
   useEffect(() => {
@@ -52,7 +52,7 @@ export function Notifications({ onOpenJob, onBack }: { onOpenJob: (id: string) =
         <OptionRow key={n.id} icon={NOTE_ICON[n.kind] ?? 'bell-outline'} tone={n.read ? 'primary' : 'accent'}
           title={t(`note.${n.kind}`)}
           subtitle={[n.service && t(`service.${n.service}`), n.at.slice(0, 16).replace('T', ' ')].filter(Boolean).join(' · ')}
-          onPress={n.jobId ? () => onOpenJob(n.jobId!) : undefined} />
+          onPress={n.jobId ? () => onOpenJob(n.jobId!) : n.kind === 'licensePending' ? onOpenOperator : undefined} />
       ))}
       <BackButton onPress={onBack} />
     </ScrollView>

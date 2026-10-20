@@ -242,7 +242,7 @@ export default function App() {
               />
             )}
             {ready && screen.name === 'notifications' && (
-              <Notifications onOpenJob={openAnyJob} onBack={goHome} />
+              <Notifications onOpenJob={openAnyJob} onOpenOperator={() => setScreen({ name: 'operator' })} onBack={goHome} />
             )}
             {ready && screen.name === 'operator' && operator && (
               <OperatorPanel onOpenJob={openAnyJob} onBack={goHome} />
