@@ -180,11 +180,12 @@ export function TileGrid({ children }: { children: React.ReactNode }) {
   const { rtl } = useLang();
   return <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 4 }}>{children}</View>;
 }
-export function Tile({ icon, title, subtitle, onPress, tone = 'primary' }: { icon: IconName; title: string; subtitle?: string; onPress: () => void; tone?: 'primary' | 'accent' }) {
+export function Tile({ icon, title, subtitle, onPress, tone = 'primary', selected }: { icon: IconName; title: string; subtitle?: string; onPress: () => void; tone?: 'primary' | 'accent'; selected?: boolean }) {
   const { rtl } = useLang();
   return (
-    <Pressable onPress={onPress} style={[s.card, { width: '48.5%', minHeight: 118, gap: 8, alignItems: rtl ? 'flex-end' : 'flex-start' }]}>
-      <IconCircle name={icon} tone={tone} size={42} />
+    <Pressable onPress={onPress} style={[s.card, { width: '48.5%', minHeight: 118, gap: 8, alignItems: rtl ? 'flex-end' : 'flex-start' },
+      selected && { borderColor: colors.primary, borderWidth: 2 }]}>
+      <IconCircle name={selected ? 'check' : icon} tone={selected ? 'primary' : tone} size={42} />
       <Text style={[s.optTitle, rtl && s.rtl]} numberOfLines={2}>{title}</Text>
       {!!subtitle && <Text style={[s.optSub, rtl && s.rtl, { marginTop: 0 }]} numberOfLines={2}>{subtitle}</Text>}
     </Pressable>

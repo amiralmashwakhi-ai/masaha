@@ -376,6 +376,16 @@ const en = {
   'offersCount': 'offers',
   'waitingOffers': 'Waiting for offers',
   'pickService': 'Pick the service you need. You will get written quotes from licensed offices.',
+  'pickServices': 'Pick one service or more for the same plot. Licensed offices will send written quotes.',
+  'nextWithCount': 'Next ({n} services)',
+  'projectRequest': 'One request, several services',
+  'projectHint': 'Enter the plot details once. Each service gets its own quotes, so you can pick a different office for each.',
+  'addAnotherService': 'Add another service',
+  'estimateTotal': 'Estimated total',
+  'projectSeparate': 'Each service has its own agreement and payment.',
+  'submitCount': 'Send request ({n} services)',
+  'sameProject': 'Part of a project: {n} services',
+  'projectOther': 'Other services for the same plot',
 };
 
 type Key = keyof typeof en;
@@ -755,6 +765,16 @@ const ar: Record<Key, string> = {
   'offersCount': 'عروض',
   'waitingOffers': 'بانتظار العروض',
   'pickService': 'اختر الخدمة التي تحتاجها، وستصلك عروض أسعار مكتوبة من مكاتب مرخّصة.',
+  'pickServices': 'اختر خدمة أو أكثر لنفس القطعة، وستصلك عروض أسعار مكتوبة من مكاتب مرخّصة.',
+  'nextWithCount': 'التالي ({n} خدمات)',
+  'projectRequest': 'طلب واحد لعدة خدمات',
+  'projectHint': 'تدخل بيانات القطعة مرة واحدة. كل خدمة تصلها عروضها الخاصة، ويمكنك اختيار مكتب مختلف لكل خدمة.',
+  'addAnotherService': 'أضف خدمة أخرى',
+  'estimateTotal': 'التقدير الإجمالي',
+  'projectSeparate': 'لكل خدمة اتفاق ودفع خاص بها.',
+  'submitCount': 'أرسل الطلب ({n} خدمات)',
+  'sameProject': 'ضمن مشروع: {n} خدمات',
+  'projectOther': 'خدمات أخرى لنفس القطعة',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

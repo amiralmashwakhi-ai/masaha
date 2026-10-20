@@ -261,8 +261,8 @@ export default function App() {
                 initialService={screen.service}
                 invited={screen.providerId ? { id: screen.providerId, name: providers.find((p) => p.id === screen.providerId)?.name ?? '' } : undefined}
                 onCancel={() => setScreen({ name: 'jobs' })}
-                onDone={async (r) => {
-                  await run(() => data.createJob(userId, r))();
+                onDone={async (rs) => {
+                  await run(() => data.createJobs(userId, rs))();
                   setScreen({ name: 'jobs' });
                 }}
               />
@@ -283,6 +283,8 @@ export default function App() {
                 openChat={screen.chat}
                 canQuote={!!me?.verified}
                 onVerify={() => setScreen({ name: 'settings' })}
+                siblings={current.projectId ? visibleJobs.filter((j) => j.projectId === current.projectId && j.id !== current.id) : []}
+                onOpenJob={(id) => setScreen({ name: 'job', id, back: screen.back })}
                 onBack={() => setScreen(screen.back ?? { name: 'jobs' })}
               />
             )}

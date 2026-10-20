@@ -9,7 +9,7 @@ import { ChatBubble, chatAvailable } from './ChatCard';
 import { Deliverables } from './Deliverables';
 import { JobSafety, NeedLicense } from './Safety';
 import { ReviewList } from './ReviewList';
-import { BackButton, Button, Card, colors, Field, H, IconCircle, P, Pill, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, Pill, useLang } from '../ui';
 
 export interface JobActions {
   unsign: (jobId: string) => void;
@@ -22,9 +22,10 @@ export interface JobActions {
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, openChat, canQuote, onVerify, onBack }: {
+export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, openChat, canQuote, onVerify, siblings = [], onOpenJob, onBack }: {
   job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions; onChanged: () => void;
-  onProfile: (id: string) => void; openChat?: boolean; canQuote?: boolean; onVerify?: () => void; onBack: () => void;
+  onProfile: (id: string) => void; openChat?: boolean; canQuote?: boolean; onVerify?: () => void;
+  siblings?: Job[]; onOpenJob?: (id: string) => void; onBack: () => void;
 }) {
   const { t, rtl } = useLang();
   const [price, setPrice] = useState('');
@@ -88,6 +89,15 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
           {!!job.notes && <P>{job.notes}</P>}
         </View>
       </Card>
+      {siblings.length > 0 && (
+        <Card>
+          <P>{t('projectOther')}</P>
+          {siblings.map((x) => (
+            <OptionRow key={x.id} icon={SERVICES.find((s) => s.id === x.service)?.icon ?? 'map-marker'}
+              title={serviceName(x, t)} subtitle={t(`stage.${x.stage}`)} onPress={() => onOpenJob?.(x.id)} />
+          ))}
+        </Card>
+      )}
       {chatAvailable(job, role) && <Button title={t('openChat')} icon="chat-processing-outline" secondary onPress={() => setChatSignal((n) => n + 1)} />}
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
       {note && (

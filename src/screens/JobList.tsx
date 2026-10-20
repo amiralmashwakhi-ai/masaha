@@ -38,6 +38,7 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
     if (won) return `${fmt(won.priceJod)} ${t('jod')}`;
     return j.quotes.length ? `${j.quotes.length} ${t('offersCount')}` : t('waitingOffers');
   };
+  const projectSize = (id: string) => jobs.filter((x) => x.projectId === id).length;
   const phase = (j: Job) => ['requested', 'quoted'].includes(j.stage) ? 'open' : ['done', 'cancelled'].includes(j.stage) ? 'closed' : 'active';
   const shown = jobs.filter((j) => (!service || j.service === service) && (!gov || j.location.governorate === gov)
     && (status === 'all' || phase(j) === status)
@@ -89,6 +90,9 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
                     .filter(Boolean).join(' · ')}
                 </P>
                 <P muted small>{offerLine(j)}</P>
+                {!!j.projectId && projectSize(j.projectId) > 1 && (
+                  <Pill icon="layers-outline" tone="accent" text={t('sameProject').replace('{n}', String(projectSize(j.projectId)))} />
+                )}
               </View>
             </View>
             <Progress stage={j.stage} />
