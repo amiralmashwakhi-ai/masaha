@@ -29,6 +29,7 @@ export interface ServiceRequest {
   service: ServiceId;
   location: PlotLocation;
   notes: string;
+  visits?: number; // construction staking only
   createdAt: string;
   stage: JobStage;
 }

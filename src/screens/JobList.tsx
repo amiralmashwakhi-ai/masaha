@@ -41,7 +41,8 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
                 <P muted small>
                   {[t(`gov.${j.location.governorate}`), j.location.village,
                     j.location.basin && `${t('basin')} ${j.location.basin}`,
-                    j.location.plotNumber && `${t('plotNumber')} ${j.location.plotNumber}`]
+                    j.location.plotNumber && `${t('plotNumber')} ${j.location.plotNumber}`,
+                    j.visits && `${j.visits} ${t('visitsShort')}`]
                     .filter(Boolean).join(' · ')}
                 </P>
               </View>

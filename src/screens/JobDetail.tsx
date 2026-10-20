@@ -40,6 +40,7 @@ export function JobDetail({ job, role, providers, loadCustomerReviews, actions, 
     <ScrollView>
       <H>{t(`service.${job.service}`)}</H>
       <P muted>{t(`stage.${job.stage}`)} ({JOB_STAGES.indexOf(job.stage) + 1}/{JOB_STAGES.length})</P>
+      {!!job.visits && <P>{`${t('visits')}: ${job.visits}`}</P>}
 
       {!accepted && (
         <Card>
