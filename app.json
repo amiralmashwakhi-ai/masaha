@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Masaha مساحة",
+    "name": "Masaha",
     "slug": "masaha",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -25,6 +25,7 @@
     },
     "extra": {
       "supportsRTL": true
-    }
+    },
+    "owner": "amir.masaha"
   }
 }
