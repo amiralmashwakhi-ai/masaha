@@ -14,7 +14,7 @@ interface JobRow {
   reviews: { author_role: Role; stars: Review['stars']; body: string | null }[];
 }
 
-const JOB_SELECT = '*, quotes(id, provider_id, price_fils, days, scope), agreements(customer_signed_at, provider_signed_at), '
+const JOB_SELECT = '*, quotes!quotes_job_id_fkey(id, provider_id, price_fils, days, scope), agreements(customer_signed_at, provider_signed_at), '
   + 'escrow_milestones(key, share, status), job_events(at, actor_id, kind, body), reviews(author_role, stars, body)';
 
 function toJob(r: JobRow): Job {
