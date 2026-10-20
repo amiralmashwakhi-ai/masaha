@@ -182,3 +182,40 @@ export async function removeMethod(id: string) {
   const { error } = await supabase.from('payment_methods').delete().eq('id', id);
   if (error) throw error;
 }
+
+// Chat between a customer and a provider about one job. Opens once the other side accepts the request.
+export interface Chat {
+  id: string; providerId: string; providerName: string; requestedBy: string; status: 'pending' | 'accepted' | 'declined';
+}
+export interface ChatMessage { id: string; senderId: string; body: string; at: string }
+
+// The server removes digits too; doing it here shows the sender what will be sent.
+export const stripDigits = (s: string) => s.replace(/[0-9٠-٩۰-۹]/g, '');
+
+export async function listChats(jobId: string): Promise<Chat[]> {
+  const { data, error } = await supabase.from('chats').select('id, provider_id, requested_by, status').eq('job_id', jobId);
+  if (error) throw error;
+  const ids = data.map((c) => c.provider_id);
+  const { data: names } = ids.length
+    ? await supabase.from('providers').select('id, display_name').in('id', ids)
+    : { data: [] as { id: string; display_name: string }[] };
+  return data.map((c) => ({
+    id: c.id, providerId: c.provider_id, requestedBy: c.requested_by, status: c.status,
+    providerName: names?.find((n) => n.id === c.provider_id)?.display_name ?? '',
+  }));
+}
+
+export const requestChat = (jobId: string, providerId: string) => rpc('request_chat', { p_job: jobId, p_provider: providerId });
+export const respondChat = (chatId: string, accept: boolean) => rpc('respond_chat', { p_chat: chatId, p_accept: accept });
+
+export async function listMessages(chatId: string): Promise<ChatMessage[]> {
+  const { data, error } = await supabase.from('chat_messages').select('id, sender_id, body, created_at')
+    .eq('chat_id', chatId).order('created_at');
+  if (error) throw error;
+  return data.map((m) => ({ id: m.id, senderId: m.sender_id, body: m.body, at: m.created_at }));
+}
+
+export async function sendMessage(chatId: string, senderId: string, body: string) {
+  const { error } = await supabase.from('chat_messages').insert({ chat_id: chatId, sender_id: senderId, body: stripDigits(body).trim() });
+  if (error) throw error;
+}

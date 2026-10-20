@@ -136,10 +136,11 @@ export default function App() {
               }}
             />
           )}
-          {ready && current && (
+          {ready && current && userId && (
             <JobDetail
               job={current}
               role={role}
+              userId={userId}
               providers={providers}
               loadCustomerReviews={data.reviewsAbout}
               actions={actions}

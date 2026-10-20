@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { split } from '../money';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
+import { ChatCard } from './ChatCard';
 import { ReviewList } from './ReviewList';
 import { Button, Card, colors, Field, H, P, useLang } from '../ui';
 
@@ -15,8 +16,8 @@ export interface JobActions {
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, providers, loadCustomerReviews, actions, onProfile, onBack }: {
-  job: Job; role: Role; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions;
+export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onProfile, onBack }: {
+  job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions;
   onProfile: (id: string) => void; onBack: () => void;
 }) {
   const { t } = useLang();
@@ -142,6 +143,8 @@ export function JobDetail({ job, role, providers, loadCustomerReviews, actions, 
           {theirReview && <P muted>{`${t('theyRatedYou')}: ${'★'.repeat(theirReview.stars)} ${theirReview.text}`}</P>}
         </Card>
       )}
+
+      <ChatCard job={job} role={role} userId={userId} providers={providers} />
 
       <Card>
         <P>{t('record')}</P>
