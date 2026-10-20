@@ -6,7 +6,7 @@ import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import * as data from '../data';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Attachment, Role, ServiceId, ServicePost } from '../types';
-import { Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
+import { Button, Card, colors, Field, H, IconCircle, matches, OptionRow, P, SearchBox, useLang } from '../ui';
 import { ReportBlock } from './Safety';
 
 function Attachments({ items }: { items: Attachment[] }) {
@@ -90,16 +90,19 @@ export function PostFeed({ role, userId, onProvider, onRequest, onNewPost, onBac
   const [posts, setPosts] = useState<ServicePost[] | null>(null);
   const [filter, setFilter] = useState<ServiceId | null>(null);
   const [blocked, setBlocked] = useState<string[]>([]);
+  const [query, setQuery] = useState('');
   const load = () => {
     data.listPosts().then(setPosts).catch(() => setPosts([]));
     data.listBlocked().then(setBlocked).catch(() => {});
   };
   useEffect(load, []);
-  const shown = (posts ?? []).filter((p) => (!filter || p.service === filter) && !blocked.includes(p.providerId));
+  const shown = (posts ?? []).filter((p) => (!filter || p.service === filter) && !blocked.includes(p.providerId)
+    && matches(query, p.title, p.body, p.providerName, t(`service.${p.service}`), p.governorate && t(`gov.${p.governorate}`)));
   return (
     <ScrollView>
       <H>{t('browseServices')}</H>
       {onNewPost && <Button title={t('newPost')} icon="plus" onPress={onNewPost} />}
+      <SearchBox value={query} onChange={setQuery} placeholder={t('searchPosts')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
         {[null, ...SERVICES.map((x) => x.id)].map((id) => (
           <Pressable key={id ?? 'all'} onPress={() => setFilter(id)}

@@ -316,6 +316,8 @@ const en = {
   'waitingOtherSide': 'You agreed. Waiting for the other side.',
   'ev.settleProposed': 'Agreed to end the dispute amicably',
   'ev.settled': 'Dispute ended amicably; the job continues',
+  'searchPosts': 'Search services, providers or places',
+  'searchJobs': 'Search by service, area, basin or plot',
 };
 
 type Key = keyof typeof en;
@@ -635,6 +637,8 @@ const ar: Record<Key, string> = {
   'waitingOtherSide': 'وافقت أنت. بانتظار موافقة الطرف الآخر.',
   'ev.settleProposed': 'وافق على إنهاء النزاع ودياً',
   'ev.settled': 'انتهى النزاع ودياً ويستمر العمل',
+  'searchPosts': 'ابحث عن خدمة أو مزوّد أو منطقة',
+  'searchJobs': 'ابحث بالخدمة أو المنطقة أو الحوض أو القطعة',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

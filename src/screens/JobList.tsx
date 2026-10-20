@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SERVICES } from '../services';
 import { Job, JOB_STAGES, Role } from '../types';
-import { Button, Card, colors, H, IconCircle, P, useLang } from '../ui';
+import { Button, Card, colors, H, IconCircle, matches, P, SearchBox, useLang } from '../ui';
 
 function Progress({ stage }: { stage: Job['stage'] }) {
   const { t, rtl } = useLang();
@@ -25,12 +25,15 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
   role: Role; jobs: Job[]; onNew?: () => void; onOpen: (id: string) => void; onBack: () => void;
 }) {
   const { t, rtl } = useLang();
+  const [query, setQuery] = useState('');
   return (
     <ScrollView>
       <H>{role === 'customer' ? t('myJobs') : t('jobFeed')}</H>
       {role === 'customer' && onNew && <Button title={t('newRequest')} icon="plus" onPress={onNew} />}
+      {jobs.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t('searchJobs')} />}
       {jobs.length === 0 && <P muted>{t('noJobs')}</P>}
-      {jobs.map((j) => {
+      {jobs.filter((j) => matches(query, t(`service.${j.service}`), t(`gov.${j.location.governorate}`), j.location.directorate,
+        j.location.village, j.location.basin, j.location.plotNumber, j.notes, t(`stage.${j.stage}`))).map((j) => {
         const icon = SERVICES.find((s) => s.id === j.service)?.icon ?? 'map-marker';
         return (
           <Card key={j.id} onPress={() => onOpen(j.id)}>

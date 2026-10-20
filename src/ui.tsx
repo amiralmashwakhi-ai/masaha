@@ -69,6 +69,32 @@ export function Header({ onMenu, onBell, unread = 0 }: { onMenu: () => void; onB
   );
 }
 
+// Search ignores case, Arabic diacritics and the common letter variants (أ/إ/آ/ا, ة/ه, ى/ي).
+export const normalize = (s: string) => s.toLowerCase()
+  .replace(/[\u064B-\u0652\u0640]/g, '')
+  .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+export const matches = (query: string, ...fields: (string | undefined | null | false)[]) => {
+  const words = normalize(query).split(/\s+/).filter(Boolean);
+  const hay = normalize(fields.filter(Boolean).join(' '));
+  return words.every((w) => hay.includes(w));
+};
+
+export function SearchBox({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  const { rtl } = useLang();
+  return (
+    <View style={[s.input, { flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingVertical: 4 }]}>
+      <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
+      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.muted}
+        style={{ flex: 1, paddingVertical: 6, fontSize: 14, color: colors.ink, textAlign: rtl ? 'right' : 'left' }} />
+      {!!value && (
+        <Pressable onPress={() => onChange('')} hitSlop={8}>
+          <MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 export function H({ children }: { children: React.ReactNode }) {
   const { rtl } = useLang();
   return <Text style={[s.h, rtl && s.rtl]}>{children}</Text>;
