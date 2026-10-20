@@ -11,7 +11,7 @@ import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
 import { Menu } from './src/screens/Menu';
 import { PostEditor, PostFeed } from './src/screens/Posts';
-import { Notifications, OperatorPanel } from './src/screens/Safety';
+import { NeedLicense, Notifications, OperatorPanel } from './src/screens/Safety';
 import { Settings } from './src/screens/Settings';
 import { Chats } from './src/screens/Chats';
 import { Tab, TabBar } from './src/screens/TabBar';
@@ -223,7 +223,8 @@ export default function App() {
               />
             )}
             {ready && screen.name === 'newPost' && userId && (
-              <PostEditor userId={userId} onDone={() => openProfile(userId)} onBack={goHome} />
+              me?.verified ? <PostEditor userId={userId} onDone={() => openProfile(userId)} onBack={goHome} />
+                : <NeedLicense onSettings={() => setScreen({ name: 'settings' })} />
             )}
             {ready && screen.name === 'history' && userId && (
               <History
@@ -241,7 +242,7 @@ export default function App() {
               <OperatorPanel onOpenJob={openAnyJob} onBack={goHome} />
             )}
             {ready && screen.name === 'jobs' && (
-              <JobList
+              role === 'provider' && !me?.verified ? <NeedLicense onSettings={() => setScreen({ name: 'settings' })} /> : <JobList
                 role={role}
                 jobs={visibleJobs}
                 onNew={() => setScreen({ name: 'wizard' })}
@@ -274,6 +275,8 @@ export default function App() {
                 }}
                 onProfile={openProfile}
                 openChat={screen.chat}
+                canQuote={!!me?.verified}
+                onVerify={() => setScreen({ name: 'settings' })}
                 onBack={() => setScreen(screen.back ?? { name: 'jobs' })}
               />
             )}
@@ -284,7 +287,7 @@ export default function App() {
                 mine={viewedProvider.id === userId}
                 viewerId={userId!}
                 onRequest={requestService}
-                onDirect={() => setScreen({ name: 'wizard', providerId: viewedProvider.id })}
+                onDirect={viewedProvider.verified ? () => setScreen({ name: 'wizard', providerId: viewedProvider.id }) : undefined}
                 onNewPost={() => setScreen({ name: 'newPost' })}
                 onEdit={() => setScreen({ name: 'editProvider' })}
                 onBack={() => setScreen(screen.back)}

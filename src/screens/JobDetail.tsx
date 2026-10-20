@@ -7,7 +7,7 @@ import { serviceName } from '../services';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
 import { ChatBubble, chatAvailable } from './ChatCard';
 import { Deliverables } from './Deliverables';
-import { JobSafety } from './Safety';
+import { JobSafety, NeedLicense } from './Safety';
 import { ReviewList } from './ReviewList';
 import { BackButton, Button, Card, colors, Field, H, P, useLang } from '../ui';
 
@@ -22,9 +22,9 @@ export interface JobActions {
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, openChat, onBack }: {
+export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, openChat, canQuote, onVerify, onBack }: {
   job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions; onChanged: () => void;
-  onProfile: (id: string) => void; openChat?: boolean; onBack: () => void;
+  onProfile: (id: string) => void; openChat?: boolean; canQuote?: boolean; onVerify?: () => void; onBack: () => void;
 }) {
   const { t } = useLang();
   const [price, setPrice] = useState('');
@@ -101,7 +101,8 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
               </View>
             );
           })}
-          {role === 'provider' && job.quotes.length === 0 && (
+          {role === 'provider' && job.quotes.length === 0 && !canQuote && onVerify && <NeedLicense onSettings={onVerify} />}
+          {role === 'provider' && job.quotes.length === 0 && canQuote && (
             <View style={{ marginTop: 12 }}>
               <Field label={visits ? t('pricePerVisit') : t('price')} value={price} onChange={setPrice} numeric />
               {!!visits && Number(price) > 0 && <P muted>{`${t('total')}: ${fmt(Number(price) * visits)} ${t('jod')}`}</P>}

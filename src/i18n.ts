@@ -358,6 +358,9 @@ const en = {
   'phase.active': 'In progress',
   'phase.closed': 'Finished or cancelled',
   'licenseTaken': 'This licence number is already registered to another account. Contact Masaha if this is a mistake.',
+  'needLicenseTitle': 'Verify your licence first',
+  'needLicenseBody': 'Your office can show services, see customer requests and send quotes only after Masaha verifies its surveying licence. Upload it from Settings.',
+  'verifyLicense': 'Upload licence',
 };
 
 type Key = keyof typeof en;
@@ -719,6 +722,9 @@ const ar: Record<Key, string> = {
   'phase.active': 'قيد التنفيذ',
   'phase.closed': 'منتهية أو ملغاة',
   'licenseTaken': 'رقم الرخصة هذا مسجّل في حساب آخر. تواصل مع مساحة إذا كان هذا خطأ.',
+  'needLicenseTitle': 'وثّق رخصتك أولاً',
+  'needLicenseBody': 'لا يستطيع مكتبك عرض خدماته أو رؤية طلبات العملاء أو تقديم عروض أسعار قبل أن توثّق مساحة رخصة المساحة. ارفعها من الإعدادات.',
+  'verifyLicense': 'رفع الرخصة',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

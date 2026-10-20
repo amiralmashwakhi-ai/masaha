@@ -134,6 +134,19 @@ function DisputeCard({ job, role, onDone }: { job: Job; role: Role; onDone: () =
 
 const DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 
+// Shown instead of provider tools until Masaha has verified the office's licence.
+export function NeedLicense({ onSettings }: { onSettings: () => void }) {
+  const { t } = useLang();
+  return (
+    <Card>
+      <View style={{ alignItems: 'center', marginBottom: 6 }}><IconCircle name="shield-alert-outline" size={52} /></View>
+      <P>{t('needLicenseTitle')}</P>
+      <P muted small>{t('needLicenseBody')}</P>
+      <Button title={t('verifyLicense')} icon="file-upload-outline" onPress={onSettings} />
+    </Card>
+  );
+}
+
 // Provider uploads their licence; Ameer's office reviews it before the "verified" badge appears.
 export function LicenseCard({ userId }: { userId: string }) {
   const { t } = useLang();
