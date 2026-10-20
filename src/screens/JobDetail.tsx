@@ -102,6 +102,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
               {!!visits && Number(price) > 0 && <P muted>{`${t('total')}: ${fmt(Number(price) * visits)} ${t('jod')}`}</P>}
               <Field label={t('days')} value={days} onChange={setDays} numeric />
               <Field label={t('scope')} value={scope} onChange={setScope} />
+              <P muted small>{t('feesNote')}</P>
               {Number(price) > 0 && (
                 <P muted>{`${t('commission')}: ${fmt(split(Number(price) * (visits || 1)).commission)} · ${t('providerGets')}: ${fmt(split(Number(price) * (visits || 1)).providerGets)} ${t('jod')}`}</P>
               )}
@@ -121,6 +122,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         <Card>
           <P>{t('agreement')}</P>
           <P muted>{t('agreementBody')}</P>
+          <P muted small>{t('feesNote')}</P>
           <P>{`${providerOf(accepted.providerId)?.name} · ${priceLine(accepted)}`}</P>
           <P muted>{accepted.scope}</P>
           <P muted>{`${t('commission')}: ${fmt(split(accepted.priceJod).commission)} · ${t('providerGets')}: ${fmt(split(accepted.priceJod).providerGets)} ${t('jod')}`}</P>

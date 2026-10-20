@@ -94,6 +94,7 @@ export function RequestWizard({ initialService, onDone, onCancel }: {
       </Card>
       <Card>
         <P>{`${t('estimate')}: ${range[0] * (info.perVisit ? visits : 1)}–${range[1] * (info.perVisit ? visits : 1)} ${t('jod')}`}</P>
+        <P muted small>{t('feesNote')}</P>
         {info.perVisit && <P muted small>{`${range[0]}–${range[1]} ${t('jod')} ${t('perVisit')} × ${visits}`}</P>}
       </Card>
       <Button
