@@ -3,13 +3,13 @@ import { Linking, ScrollView, Text, View } from 'react-native';
 import * as data from '../data';
 import { autoReleaseAt, correctionNote, eventText, lastCorrectionAt } from '../events';
 import { fmt, split } from '../money';
-import { serviceName } from '../services';
+import { serviceName, SERVICES, stageTone } from '../services';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
 import { ChatBubble, chatAvailable } from './ChatCard';
 import { Deliverables } from './Deliverables';
 import { JobSafety, NeedLicense } from './Safety';
 import { ReviewList } from './ReviewList';
-import { BackButton, Button, Card, colors, Field, H, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, P, Pill, useLang } from '../ui';
 
 export interface JobActions {
   unsign: (jobId: string) => void;
@@ -26,7 +26,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions; onChanged: () => void;
   onProfile: (id: string) => void; openChat?: boolean; canQuote?: boolean; onVerify?: () => void; onBack: () => void;
 }) {
-  const { t } = useLang();
+  const { t, rtl } = useLang();
   const [price, setPrice] = useState('');
   const [days, setDays] = useState('');
   const [scope, setScope] = useState('');
@@ -72,11 +72,23 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   return (
     <View style={{ flex: 1 }}>
     <ScrollView>
-      <H>{serviceName(job, t)}</H>
-      {job.invitedProviderId && <P muted>{t('directTo').replace('{n}', providerOf(job.invitedProviderId)?.name ?? t('provider'))}</P>}
-      {!!job.notes && <P muted>{job.notes}</P>}
+      <Card>
+        <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'flex-start', gap: 12 }}>
+          <IconCircle name={SERVICES.find((s) => s.id === job.service)?.icon ?? 'map-marker'} size={48} />
+          <View style={{ flex: 1, gap: 4 }}>
+            <H>{serviceName(job, t)}</H>
+            <Pill text={t(`stage.${job.stage}`)} tone={stageTone(job.stage)} />
+          </View>
+        </View>
+        <View style={{ marginTop: 10, gap: 2 }}>
+          <P muted small>{[t(`gov.${job.location.governorate}`), job.location.directorate, job.location.village,
+            job.location.basin && `${t('basin')} ${job.location.basin}`, job.location.plotNumber && `${t('plotNumber')} ${job.location.plotNumber}`,
+            job.location.areaM2 && `${job.location.areaM2} م²`].filter(Boolean).join(' · ')}</P>
+          {job.invitedProviderId && <P muted small>{t('directTo').replace('{n}', providerOf(job.invitedProviderId)?.name ?? t('provider'))}</P>}
+          {!!job.notes && <P>{job.notes}</P>}
+        </View>
+      </Card>
       {chatAvailable(job, role) && <Button title={t('openChat')} icon="chat-processing-outline" secondary onPress={() => setChatSignal((n) => n + 1)} />}
-      <P muted>{JOB_STAGES.includes(job.stage) ? `${t(`stage.${job.stage}`)} (${JOB_STAGES.indexOf(job.stage) + 1}/${JOB_STAGES.length})` : t(`stage.${job.stage}`)}</P>
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
       {note && (
         <Card>
@@ -93,11 +105,23 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
           {job.quotes.map((q) => {
             const p = providerOf(q.providerId);
             return (
-              <View key={q.id} style={{ borderTopWidth: 1, borderColor: colors.line, paddingTop: 8, marginTop: 8 }}>
-                <P>{`${p?.name ?? ''} · ${priceLine(q)}`}</P>
-                <P muted>{q.scope}</P>
-                <Button title={t('viewProfile')} onPress={() => onProfile(q.providerId)} secondary />
-                {role === 'customer' && <Button title={t('accept')} onPress={() => actions.acceptQuote(job.id, q.id)} />}
+              <View key={q.id} style={{ borderTopWidth: 1, borderColor: colors.line, paddingTop: 12, marginTop: 12, gap: 4 }}>
+                <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <P>{p?.name ?? ''}</P>
+                    {p && <Pill text={p.verified ? t('verified') : t('unverified')} tone={p.verified ? 'primary' : 'accent'} icon={p.verified ? 'check-decagram' : undefined} />}
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 22, fontWeight: '800', color: colors.primary }}>{fmt(q.priceJod)}</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted }}>{`${t('jod')} · ${q.days} ${t('days')}`}</Text>
+                  </View>
+                </View>
+                {visits > 1 && <P muted small>{`${fmt(q.priceJod / visits)} × ${visits}`}</P>}
+                {!!q.scope && <P muted>{q.scope}</P>}
+                <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', gap: 8 }}>
+                  <View style={{ flex: 1 }}><Button title={t('viewProfile')} onPress={() => onProfile(q.providerId)} secondary /></View>
+                  {role === 'customer' && <View style={{ flex: 1 }}><Button title={t('accept')} onPress={() => actions.acceptQuote(job.id, q.id)} /></View>}
+                </View>
               </View>
             );
           })}

@@ -1,4 +1,4 @@
-import { ServiceId, VisitLength } from './types';
+import { JobStage, ServiceId, VisitLength } from './types';
 import type { IconName } from './ui';
 
 export interface ServiceInfo {
@@ -37,3 +37,8 @@ export const GOVERNORATES = [
   'amman', 'zarqa', 'irbid', 'balqa', 'madaba', 'jerash',
   'ajloun', 'mafraq', 'karak', 'tafilah', 'maan', 'aqaba',
 ] as const;
+
+// Colour of a job's status label: sand while waiting on quotes, teal while under way.
+export const stageTone = (stage: JobStage): 'primary' | 'accent' | 'muted' | 'danger' =>
+  stage === 'requested' || stage === 'quoted' ? 'accent'
+    : stage === 'cancelled' ? 'muted' : stage === 'disputed' ? 'danger' : 'primary';

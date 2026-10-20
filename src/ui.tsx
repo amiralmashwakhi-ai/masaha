@@ -144,6 +144,78 @@ export function SearchWithFilters({ value, onChange, placeholder, active, childr
   );
 }
 
+export type Tone = 'primary' | 'accent' | 'muted' | 'danger';
+const toneColors = (tone: Tone) => ({
+  primary: { bg: colors.primarySoft, fg: colors.primary },
+  accent: { bg: colors.accentSoft, fg: colors.accentInk },
+  muted: { bg: colors.line, fg: colors.muted },
+  danger: { bg: colors.accentSoft, fg: colors.danger },
+}[tone]);
+
+// A small rounded label, for a job's status, "verified" and the like.
+export function Pill({ text, tone = 'primary', icon }: { text: string; tone?: Tone; icon?: IconName }) {
+  const { rtl } = useLang();
+  const c = toneColors(tone);
+  return (
+    <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, alignSelf: rtl ? 'flex-end' : 'flex-start', backgroundColor: c.bg, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 10 }}>
+      {icon && <MaterialCommunityIcons name={icon} size={13} color={c.fg} />}
+      <Text style={{ fontSize: 12, fontWeight: '700', color: c.fg }}>{text}</Text>
+    </View>
+  );
+}
+
+// A section heading with an optional link on the other side ("see all").
+export function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  const { rtl } = useLang();
+  return (
+    <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 10 }}>
+      <Text style={{ fontSize: 17, fontWeight: '800', color: colors.ink }}>{title}</Text>
+      {action && onAction && <Text onPress={onAction} style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>{action}</Text>}
+    </View>
+  );
+}
+
+// Two-column grid of tappable tiles: an icon over a title and a short line.
+export function TileGrid({ children }: { children: React.ReactNode }) {
+  const { rtl } = useLang();
+  return <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 4 }}>{children}</View>;
+}
+export function Tile({ icon, title, subtitle, onPress, tone = 'primary' }: { icon: IconName; title: string; subtitle?: string; onPress: () => void; tone?: 'primary' | 'accent' }) {
+  const { rtl } = useLang();
+  return (
+    <Pressable onPress={onPress} style={[s.card, { width: '48.5%', minHeight: 118, gap: 8, alignItems: rtl ? 'flex-end' : 'flex-start' }]}>
+      <IconCircle name={icon} tone={tone} size={42} />
+      <Text style={[s.optTitle, rtl && s.rtl]} numberOfLines={2}>{title}</Text>
+      {!!subtitle && <Text style={[s.optSub, rtl && s.rtl, { marginTop: 0 }]} numberOfLines={2}>{subtitle}</Text>}
+    </Pressable>
+  );
+}
+
+// Round picture, or the first letter of the name on teal.
+export function Avatar({ name, uri, size = 56 }: { name: string; uri?: string; size?: number }) {
+  if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: colors.primaryInk, fontSize: size * 0.42, fontWeight: '800' }}>{name.trim().replace(/^مكتب\s+/, '').replace(/^ال/, '').charAt(0) || '؟'}</Text>
+    </View>
+  );
+}
+
+// A row of figures: a big number over a small label, split by thin lines.
+export function Stats({ items }: { items: { value: string; label: string }[] }) {
+  const { rtl } = useLang();
+  return (
+    <View style={[s.card, { flexDirection: rtl ? 'row-reverse' : 'row', paddingVertical: 12 }]}>
+      {items.map((it, i) => (
+        <View key={it.label} style={{ flex: 1, alignItems: 'center', borderColor: colors.line, borderLeftWidth: i > 0 && rtl ? 0 : i > 0 ? 1 : 0, borderRightWidth: i > 0 && rtl ? 1 : 0 }}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: colors.primary }}>{it.value}</Text>
+          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{it.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function H({ children }: { children: React.ReactNode }) {
   const { rtl } = useLang();
   return <Text style={[s.h, rtl && s.rtl]}>{children}</Text>;
@@ -246,17 +318,17 @@ const makeStyles = () => StyleSheet.create({
   menuBtn: { backgroundColor: colors.primarySoft, width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  h: { fontSize: 19, fontWeight: '700', color: colors.ink, marginBottom: 8 },
+  h: { fontSize: 21, fontWeight: '800', color: colors.ink, marginBottom: 10 },
   p: { fontSize: 14, color: colors.ink, lineHeight: 21 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
-  btn: { flexDirection: 'row', justifyContent: 'center', backgroundColor: colors.primary, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.button, alignItems: 'center', marginVertical: 5 },
+  btn: { flexDirection: 'row', justifyContent: 'center', backgroundColor: colors.primary, minHeight: 48, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.button, alignItems: 'center', marginVertical: 5 },
   btn2: { backgroundColor: colors.primarySoft },
-  btnText: { fontSize: 14, fontWeight: '600' },
+  btnText: { fontSize: 15, fontWeight: '700' },
   link: { color: colors.primary, fontSize: 13, fontWeight: '600', marginVertical: 6 },
-  card: { backgroundColor: colors.card, borderRadius: radius.card, padding: 14, marginBottom: 12, ...shadow },
-  optTitle: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  card: { backgroundColor: colors.card, borderRadius: radius.card, padding: 16, marginBottom: 12, ...shadow },
+  optTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
   optSub: { fontSize: 12, color: colors.muted, marginTop: 2 },
   label: { fontSize: 12, color: colors.muted, marginBottom: 5 },
-  input: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.input, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14, color: colors.ink },
+  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.input, minHeight: 46, paddingVertical: 10, paddingHorizontal: 12, fontSize: 15, color: colors.ink },
 });
 let s = makeStyles();

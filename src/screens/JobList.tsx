@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { GOVERNORATES, serviceName, SERVICES } from '../services';
+import { fmt } from '../money';
+import { GOVERNORATES, serviceName, SERVICES, stageTone } from '../services';
 import { Job, JOB_STAGES, Role, ServiceId } from '../types';
-import { BackButton, Button, Card, colors, H, IconCircle, Chips, matches, P, SearchWithFilters, useLang } from '../ui';
+import { BackButton, Button, Card, colors, H, IconCircle, Chips, matches, P, Pill, SearchWithFilters, useLang } from '../ui';
 
 function Progress({ stage }: { stage: Job['stage'] }) {
   const { t, rtl } = useLang();
@@ -14,9 +15,11 @@ function Progress({ stage }: { stage: Job['stage'] }) {
           <View key={st} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= current ? colors.primary : colors.line }} />
         ))}
       </View>
-      <Text style={{ fontSize: 12, color: colors.primary, marginTop: 6, textAlign: rtl ? 'right' : 'left' }}>
-        {current < 0 ? t(`stage.${stage}`) : `${current + 1}/${JOB_STAGES.length} · ${t(`stage.${stage}`)}`}
-      </Text>
+      {current >= 0 && (
+        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, textAlign: rtl ? 'right' : 'left' }}>
+          {`${t('step')} ${current + 1} ${t('of')} ${JOB_STAGES.length}`}
+        </Text>
+      )}
     </View>
   );
 }
@@ -30,6 +33,11 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
   const [gov, setGov] = useState<string | null>(null);
   const [status, setStatus] = useState<'all' | 'open' | 'active' | 'closed'>('all');
   const [sort, setSort] = useState<'new' | 'old'>('new');
+  const offerLine = (j: Job) => {
+    const won = j.quotes.find((q) => q.id === j.acceptedQuoteId);
+    if (won) return `${fmt(won.priceJod)} ${t('jod')}`;
+    return j.quotes.length ? `${j.quotes.length} ${t('offersCount')}` : t('waitingOffers');
+  };
   const phase = (j: Job) => ['requested', 'quoted'].includes(j.stage) ? 'open' : ['done', 'cancelled'].includes(j.stage) ? 'closed' : 'active';
   const shown = jobs.filter((j) => (!service || j.service === service) && (!gov || j.location.governorate === gov)
     && (status === 'all' || phase(j) === status)
@@ -39,7 +47,6 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
   return (
     <ScrollView>
       <H>{role === 'customer' ? t('myJobs') : t('jobFeed')}</H>
-      {role === 'customer' && onNew && <Button title={t('newRequest')} icon="plus" onPress={onNew} />}
       {jobs.length > 0 && (
         <SearchWithFilters value={query} onChange={setQuery} placeholder={t('searchJobs')}
           active={[service, gov, status !== 'all' || null, sort !== 'new' || null].filter(Boolean).length}>
@@ -53,16 +60,27 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
             options={[{ id: 'new', title: t('sort.new') }, { id: 'old', title: t('sort.old') }]} />
         </SearchWithFilters>
       )}
-      {jobs.length === 0 && <P muted>{t('noJobs')}</P>}
+      {jobs.length === 0 && (
+        <Card>
+          <View style={{ alignItems: 'center', gap: 8, paddingVertical: 12 }}>
+            <IconCircle name={role === 'customer' ? 'clipboard-text-outline' : 'briefcase-search-outline'} size={60} tone="accent" />
+            <P>{t('noJobs')}</P>
+            {role === 'customer' && onNew && <Button title={t('newRequest')} icon="plus" onPress={onNew} />}
+          </View>
+        </Card>
+      )}
       {jobs.length > 0 && shown.length === 0 && <P muted>{t('noResults')}</P>}
       {shown.map((j) => {
         const icon = SERVICES.find((s) => s.id === j.service)?.icon ?? 'map-marker';
         return (
           <Card key={j.id} onPress={() => onOpen(j.id)}>
-            <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 }}>
-              <IconCircle name={icon} />
-              <View style={{ flex: 1 }}>
-                <P>{serviceName(j, t)}</P>
+            <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'flex-start', gap: 12 }}>
+              <IconCircle name={icon} size={44} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flex: 1 }}><P>{serviceName(j, t)}</P></View>
+                  <Pill text={t(`stage.${j.stage}`)} tone={stageTone(j.stage)} />
+                </View>
                 <P muted small>
                   {[t(`gov.${j.location.governorate}`), j.location.village,
                     j.location.basin && `${t('basin')} ${j.location.basin}`,
@@ -70,6 +88,7 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
                     j.visits && `${j.visits} ${t('visitsShort')}`]
                     .filter(Boolean).join(' · ')}
                 </P>
+                <P muted small>{offerLine(j)}</P>
               </View>
             </View>
             <Progress stage={j.stage} />

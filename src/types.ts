@@ -57,7 +57,7 @@ export interface Review {
   at: string;
 }
 
-// Open to individual surveyors and offices; the CV is what customers judge them by.
+// A licensed surveying office; the CV is what customers judge them by.
 export interface Provider {
   id: string;
   name: string;

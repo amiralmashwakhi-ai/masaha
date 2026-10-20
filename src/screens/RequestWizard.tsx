@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { GOVERNORATES, SERVICES, VISIT_LENGTHS } from '../services';
 import { PlotLocation, ServiceId, ServiceRequest, VisitLength } from '../types';
-import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, Tile, TileGrid, useLang } from '../ui';
 
 const emptyLocation: PlotLocation = {
   governorate: '', directorate: '', village: '', basin: '', plotNumber: '',
@@ -28,15 +28,20 @@ export function RequestWizard({ initialService, invited, onDone, onCancel }: {
       <ScrollView>
         <H>{t('services')}</H>
         {invited && <Card><P>{t('directTo').replace('{n}', invited.name)}</P><P muted small>{t('directHint')}</P></Card>}
-        {SERVICES.map((sv) => (
-          <OptionRow
-            key={sv.id}
-            icon={sv.icon}
-            title={t(`service.${sv.id}`)}
-            subtitle={sv.id === 'other' ? t('otherHint') : `${sv.baseJod[0]}–${sv.baseJod[1]} ${t('jod')}${sv.perVisit ? ` ${t('perVisit')}` : ''}`}
-            onPress={() => setService(sv.id)}
-          />
-        ))}
+        <P muted small>{t('pickService')}</P>
+        <View style={{ height: 10 }} />
+        <TileGrid>
+          {SERVICES.map((sv) => (
+            <Tile
+              key={sv.id}
+              icon={sv.icon}
+              tone={sv.id === 'other' ? 'accent' : 'primary'}
+              title={t(`service.${sv.id}`)}
+              subtitle={sv.id === 'other' ? t('otherHint') : `${sv.baseJod[0]}–${sv.baseJod[1]} ${t('jod')}${sv.perVisit ? ` ${t('perVisit')}` : ''}`}
+              onPress={() => setService(sv.id)}
+            />
+          ))}
+        </TileGrid>
         <BackButton onPress={onCancel} />
       </ScrollView>
     );

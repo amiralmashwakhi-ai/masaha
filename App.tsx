@@ -188,6 +188,12 @@ export default function App() {
                 role={role}
                 name={profile.full_name}
                 coverUrl={profile.cover_url}
+                jobs={visibleJobs}
+                verified={!!me?.verified}
+                rating={me?.reviews.length ? me.reviews.reduce((a, r) => a + r.stars, 0) / me.reviews.length : undefined}
+                onOpenJob={(id) => setScreen({ name: 'job', id, back: screen })}
+                onService={requestService}
+                onVerify={() => setScreen({ name: 'settings' })}
                 onJobs={() => setScreen({ name: 'jobs' })}
                 onNew={() => setScreen({ name: 'wizard' })}
                 onBrowse={() => setScreen({ name: 'posts' })}

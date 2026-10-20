@@ -361,6 +361,21 @@ const en = {
   'needLicenseTitle': 'Verify your licence first',
   'needLicenseBody': 'Your office can show services, see customer requests and send quotes only after Masaha verifies its surveying licence. Upload it from Settings.',
   'verifyLicense': 'Upload licence',
+  'whatDoYouNeed': 'What surveying service do you need?',
+  'homeProviderLine': 'New customer requests and your jobs in one place',
+  'newRequestsCount': 'New requests',
+  'activeJobs': 'Current jobs',
+  'rating': 'Rating',
+  'seeAll': 'See all',
+  'from': 'From',
+  'jobFeedHint': 'Requests that match your services',
+  'verifyLicenseHint': 'Upload your licence to start receiving requests',
+  'reviewsCount': 'Reviews',
+  'step': 'Step',
+  'of': 'of',
+  'offersCount': 'offers',
+  'waitingOffers': 'Waiting for offers',
+  'pickService': 'Pick the service you need. You will get written quotes from licensed offices.',
 };
 
 type Key = keyof typeof en;
@@ -725,6 +740,21 @@ const ar: Record<Key, string> = {
   'needLicenseTitle': 'وثّق رخصتك أولاً',
   'needLicenseBody': 'لا يستطيع مكتبك عرض خدماته أو رؤية طلبات العملاء أو تقديم عروض أسعار قبل أن توثّق مساحة رخصة المساحة. ارفعها من الإعدادات.',
   'verifyLicense': 'رفع الرخصة',
+  'whatDoYouNeed': 'ما خدمة المساحة التي تحتاجها؟',
+  'homeProviderLine': 'طلبات العملاء الجديدة وأعمالك في مكان واحد',
+  'newRequestsCount': 'طلبات جديدة',
+  'activeJobs': 'الأعمال الحالية',
+  'rating': 'التقييم',
+  'seeAll': 'عرض الكل',
+  'from': 'من',
+  'jobFeedHint': 'طلبات تناسب خدماتك',
+  'verifyLicenseHint': 'ارفع رخصتك لتبدأ باستقبال الطلبات',
+  'reviewsCount': 'التقييمات',
+  'step': 'المرحلة',
+  'of': 'من',
+  'offersCount': 'عروض',
+  'waitingOffers': 'بانتظار العروض',
+  'pickService': 'اختر الخدمة التي تحتاجها، وستصلك عروض أسعار مكتوبة من مكاتب مرخّصة.',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };
