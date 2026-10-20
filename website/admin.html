@@ -1,0 +1,120 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>إدارة مساحة | Masaha admin</title><link rel="stylesheet" href="/style.css"><link rel="icon" href="/favicon.png">
+<style>
+.item{border-top:1px solid var(--line);padding:14px 0}.item:first-of-type{border-top:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.row button{padding:9px 14px}
+button.sec{background:var(--soft);color:var(--primary)}button.warn{background:#B5533C}
+textarea{font:inherit;width:100%;min-height:70px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.log{background:var(--bg);border-radius:12px;padding:10px 12px;font-size:14px;max-height:260px;overflow:auto}
+.log p{margin:0 0 6px}.tag{display:inline-block;border-radius:999px;padding:0 10px;background:var(--soft);color:var(--primary);font-size:13px}
+</style></head><body>
+<header><div class="wrap"><a class="brand" href="/"><img src="/logo.png" alt="">إدارة مساحة</a><nav><a href="#" id="out" hidden>تسجيل الخروج</a></nav></div></header>
+<main><div class="wrap">
+<div class="card" id="login" hidden>
+<h1>دخول الإدارة</h1>
+<form id="f"><input id="em" type="email" placeholder="الإيميل" required><input id="pw" type="password" placeholder="كلمة المرور" required minlength="6"><button>دخول</button></form>
+<p class="muted">أول مرة؟ <a href="#" id="signup">أنشئ كلمة مرور لهذا الإيميل</a></p>
+</div>
+<p id="msg" class="note" hidden></p>
+<div id="panel" hidden>
+<div class="card"><h1>الرخص بانتظار المراجعة</h1><div id="lic"></div></div>
+<div class="card"><h1>النزاعات المفتوحة</h1><div id="dis"></div></div>
+<div class="card"><h1>البلاغات</h1><div id="rep"></div></div>
+</div>
+</div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// Masaha's operator tools, kept out of the app. Row-level security only returns data to accounts in the operators table.
+const sb = supabase.createClient('https://tsqjrjjdygywjbxaukom.supabase.co', 'sb_publishable_1KQFpP1p3n9KkIAk_T3FgA_hpY1eRCr');
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const SERVICE = { plot: 'تحديد وتثبيت حدود قطعة', subdivision: 'إفراز / توحيد قطع', topographic: 'رفع مساحي (طبوغرافي)', staking: 'توقيع بناء على الأرض',
+  asBuilt: 'مخطط واقع حال', sitePlan: 'مخطط موقع تنظيمي ومعاملات أراضي', dispute: 'كشف تجاوز / خلاف على الحدود', other: 'خدمة أخرى' };
+const day = (s) => String(s).slice(0, 16).replace('T', ' ');
+const say = (t) => { $('msg').hidden = !t; $('msg').textContent = t || ''; };
+
+async function act(fn, args) {
+  const { error } = await sb.rpc(fn, args);
+  say(error ? 'حدث خطأ: ' + error.message : 'تم.');
+  load();
+}
+
+async function load() {
+  const { data: { user } } = await sb.auth.getUser();
+  $('login').hidden = !!user; $('out').hidden = !user;
+  if (!user) { $('panel').hidden = true; return; }
+  const { data: op } = await sb.from('operators').select('user_id').eq('user_id', user.id).maybeSingle();
+  if (!op) { $('panel').hidden = true; say('هذا الحساب ليس حساب إدارة: ' + user.email); return; }
+  $('panel').hidden = false;
+
+  const { data: provs } = await sb.from('providers').select('id, display_name, license_no, license_doc_path, created_at').eq('verification_status', 'pending');
+  $('lic').innerHTML = provs?.length ? '' : '<p class="muted">لا يوجد.</p>';
+  for (const p of provs ?? []) {
+    const url = p.license_doc_path ? (await sb.storage.from('licenses').createSignedUrl(p.license_doc_path, 900)).data?.signedUrl : null;
+    const el = document.createElement('div'); el.className = 'item';
+    el.innerHTML = `<b>${esc(p.display_name)}</b><br><span class="muted">رقم الرخصة: ${esc(p.license_no || '-')}</span>
+      <div class="row">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener"><button class="sec">فتح ملف الرخصة</button></a>` : ''}
+      <button data-a="1">قبول</button><button class="warn" data-a="0">رفض</button></div>`;
+    el.querySelectorAll('button[data-a]').forEach((b) => b.onclick = () =>
+      confirm(b.dataset.a === '1' ? 'قبول رخصة ' + p.display_name + '؟' : 'رفض رخصة ' + p.display_name + '؟')
+        && act('review_provider', { p_provider: p.id, p_approve: b.dataset.a === '1' }));
+    $('lic').append(el);
+  }
+
+  const { data: disputes } = await sb.from('disputes').select('id, job_id, reason, opened_at, jobs(service, customer_id)').is('closed_at', null).order('opened_at');
+  $('dis').innerHTML = disputes?.length ? '' : '<p class="muted">لا يوجد.</p>';
+  for (const d of disputes ?? []) {
+    const [{ data: events }, { data: files }, { data: chats }] = await Promise.all([
+      sb.from('job_events').select('at, actor_id, body').eq('job_id', d.job_id).order('at'),
+      sb.from('job_files').select('name, path, created_at').eq('job_id', d.job_id).order('created_at'),
+      sb.from('chats').select('id').eq('job_id', d.job_id),
+    ]);
+    const { data: msgs } = chats?.length
+      ? await sb.from('chat_messages').select('sender_id, body, created_at').in('chat_id', chats.map((c) => c.id)).order('created_at') : { data: [] };
+    const who = (id) => id === d.jobs?.customer_id ? 'العميل' : 'المساح';
+    const links = await Promise.all((files ?? []).map(async (f) =>
+      `<a href="${esc((await sb.storage.from('deliverables').createSignedUrl(f.path, 900)).data?.signedUrl || '#')}" target="_blank" rel="noopener">${esc(f.name)}</a>`));
+    const el = document.createElement('div'); el.className = 'item';
+    el.innerHTML = `<span class="tag">${esc(SERVICE[d.jobs?.service] || '')}</span> <span class="muted">${day(d.opened_at)}</span>
+      <p><b>سبب النزاع:</b> ${esc(d.reason)}</p>
+      <p><b>الملفات المسلّمة:</b> ${links.join(' · ') || 'لا يوجد'}</p>
+      <details><summary>سجل الطلب (${events?.length || 0})</summary><div class="log">${(events ?? []).map((e) => `<p>${day(e.at)} · ${esc(e.body)}</p>`).join('')}</div></details>
+      <details><summary>المحادثة (${msgs?.length || 0})</summary><div class="log">${(msgs ?? []).map((m) => `<p><b>${who(m.sender_id)}:</b> ${esc(m.body)} <span class="muted">${day(m.created_at)}</span></p>`).join('')}</div></details>
+      <textarea placeholder="ملاحظتك للطرفين (مطلوبة لإعادة العمل للتصحيح)"></textarea>
+      <div class="row"><button data-k="fix" class="sec">شرح الخلل وإعادة العمل للتصحيح</button><button data-k="refund" class="warn">إرجاع المبلغ للعميل</button><button data-k="release">تحويل المبلغ للمساح</button></div>`;
+    const note = () => el.querySelector('textarea').value.trim();
+    el.querySelectorAll('button[data-k]').forEach((b) => b.onclick = () => {
+      if (b.dataset.k === 'fix') { if (!note()) return say('اكتب الملاحظة أولاً.'); return act('request_correction', { p_dispute: d.id, p_note: note() }); }
+      if (confirm(b.textContent + '؟ لا يمكن التراجع.')) act('resolve_dispute', { p_dispute: d.id, p_refund: b.dataset.k === 'refund', p_note: note() });
+    });
+    $('dis').append(el);
+  }
+
+  const { data: reports } = await sb.from('reports').select('id, reason, created_at, post_id, chat_id').eq('status', 'open').order('created_at', { ascending: false });
+  $('rep').innerHTML = reports?.length ? '' : '<p class="muted">لا يوجد.</p>';
+  for (const r of reports ?? []) {
+    const el = document.createElement('div'); el.className = 'item';
+    el.innerHTML = `<p>${esc(r.reason)}</p><span class="muted">${r.post_id ? 'عن إعلان' : r.chat_id ? 'عن محادثة' : 'عن مستخدم'} · ${day(r.created_at)}</span>
+      <div class="row">${r.post_id ? '<button data-h="1" class="warn">إخفاء الإعلان وإغلاق البلاغ</button>' : ''}<button data-h="0" class="sec">إغلاق البلاغ</button></div>`;
+    el.querySelectorAll('button[data-h]').forEach((b) => b.onclick = () => act('close_report', { p_report: r.id, p_hide_post: b.dataset.h === '1' }));
+    $('rep').append(el);
+  }
+}
+
+$('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const { error } = await sb.auth.signInWithPassword({ email: $('em').value, password: $('pw').value });
+  say(error ? 'الإيميل أو كلمة المرور غير صحيحة.' : ''); load();
+};
+$('signup').onclick = async (e) => {
+  e.preventDefault();
+  if (!$('em').value || $('pw').value.length < 6) return say('اكتب الإيميل وكلمة مرور من 6 أحرف على الأقل، ثم اضغط هنا مرة أخرى.');
+  const { error } = await sb.auth.signUp({ email: $('em').value, password: $('pw').value,
+    options: { emailRedirectTo: 'https://masaha-kappa.vercel.app/reset-password.html' } });
+  say(error ? 'حدث خطأ: ' + error.message : 'وصلك إيميل تأكيد. افتحه واضغط الرابط، ثم ارجع وسجّل الدخول هنا.');
+};
+$('out').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); say(''); load(); };
+load();
+</script>
+</body></html>

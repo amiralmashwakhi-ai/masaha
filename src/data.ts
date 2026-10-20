@@ -374,48 +374,8 @@ export async function verificationStatus(userId: string): Promise<'none' | 'pend
   return (data?.verification_status as 'none' | 'pending' | 'verified' | 'rejected') ?? 'none';
 }
 
-// Operator (Ameer's office) tools.
-export async function isOperator(userId: string) {
-  const { data } = await supabase.from('operators').select('user_id').eq('user_id', userId).maybeSingle();
-  return !!data;
-}
+// Masaha's operator tools (licences, reports, disputes) are on website/admin.html.
 
-export interface PendingProvider { id: string; name: string; kind: string; licenseNo?: string; docUrl?: string }
-export async function pendingProviders(): Promise<PendingProvider[]> {
-  const { data, error } = await supabase.from('providers').select('id, display_name, kind, license_no, license_doc_path')
-    .eq('verification_status', 'pending');
-  if (error) throw error;
-  return Promise.all(data.map(async (p) => ({
-    id: p.id, name: p.display_name, kind: p.kind, licenseNo: p.license_no ?? undefined,
-    docUrl: p.license_doc_path
-      ? (await supabase.storage.from('licenses').createSignedUrl(p.license_doc_path, 600)).data?.signedUrl
-      : undefined,
-  })));
-}
-export const reviewProvider = (id: string, approve: boolean) => rpc('review_provider', { p_provider: id, p_approve: approve });
-
-export interface OpenReport { id: string; reason: string; at: string; postId?: string; chatId?: string; targetName?: string }
-export async function openReports(): Promise<OpenReport[]> {
-  const { data, error } = await supabase.from('reports').select('id, reason, created_at, post_id, chat_id, target_user')
-    .eq('status', 'open').order('created_at', { ascending: false });
-  if (error) throw error;
-  const ids = [...new Set(data.map((r) => r.target_user).filter(Boolean))] as string[];
-  const { data: names } = ids.length ? await supabase.from('providers').select('id, display_name').in('id', ids) : { data: [] };
-  return data.map((r) => ({
-    id: r.id, reason: r.reason, at: r.created_at, postId: r.post_id ?? undefined, chatId: r.chat_id ?? undefined,
-    targetName: (names ?? []).find((n: { id: string }) => n.id === r.target_user)?.display_name,
-  }));
-}
-export const closeReport = (id: string, hidePost: boolean) => rpc('close_report', { p_report: id, p_hide_post: hidePost });
-
-export interface OpenDispute { id: string; jobId: string; reason: string; at: string; service?: ServiceId }
-export async function openDisputes(): Promise<OpenDispute[]> {
-  const { data, error } = await supabase.from('disputes').select('id, job_id, reason, opened_at, jobs(service)')
-    .is('closed_at', null).order('opened_at');
-  if (error) throw error;
-  return (data as unknown as { id: string; job_id: string; reason: string; opened_at: string; jobs: { service: ServiceId } | null }[])
-    .map((d) => ({ id: d.id, jobId: d.job_id, reason: d.reason, at: d.opened_at, service: d.jobs?.service }));
-}
 // Amicable settlement: each side agrees; once both have, the job carries on.
 export async function openDisputeOf(jobId: string) {
   const { data } = await supabase.from('disputes').select('id, customer_settles, provider_settles')
@@ -423,8 +383,6 @@ export async function openDisputeOf(jobId: string) {
   return data ? { id: data.id as string, customer: !!data.customer_settles, provider: !!data.provider_settles } : null;
 }
 export const settleDispute = (jobId: string) => rpc('settle_dispute', { p_job: jobId });
-
-export const requestCorrection = (id: string, note: string) => rpc('request_correction', { p_dispute: id, p_note: note });
 
 // Deliverables: signed and stamped files, read through short-lived links.
 export interface JobFile { id: string; name: string; mime: string; at: string; url?: string }
@@ -490,6 +448,3 @@ export async function markChatRead(jobId: string) {
   await supabase.from('notifications').update({ read_at: new Date().toISOString() })
     .eq('job_id', jobId).in('kind', CHAT_KINDS).is('read_at', null);
 }
-
-export const resolveDispute = (id: string, refund: boolean, note: string) =>
-  rpc('resolve_dispute', { p_dispute: id, p_refund: refund, p_note: note });

@@ -37,7 +37,10 @@ const NOTE_ICON: Record<string, IconName> = {
   verified: 'check-decagram', rejected: 'alert-circle-outline', licensePending: 'card-account-details-outline',
 };
 
-export function Notifications({ onOpenJob, onOpenOperator, onBack }: { onOpenJob: (id: string) => void; onOpenOperator?: () => void; onBack: () => void }) {
+// Masaha's operator tools live on the website, not in the app.
+const ADMIN_URL = 'https://masaha-kappa.vercel.app/admin.html';
+
+export function Notifications({ onOpenJob, onBack }: { onOpenJob: (id: string) => void; onBack: () => void }) {
   const { t } = useLang();
   const [items, setItems] = useState<data.AppNotification[] | null>(null);
   useEffect(() => {
@@ -52,7 +55,7 @@ export function Notifications({ onOpenJob, onOpenOperator, onBack }: { onOpenJob
         <OptionRow key={n.id} icon={NOTE_ICON[n.kind] ?? 'bell-outline'} tone={n.read ? 'primary' : 'accent'}
           title={t(`note.${n.kind}`)}
           subtitle={[n.service && t(`service.${n.service}`), n.at.slice(0, 16).replace('T', ' ')].filter(Boolean).join(' · ')}
-          onPress={n.jobId ? () => onOpenJob(n.jobId!) : n.kind === 'licensePending' ? onOpenOperator : undefined} />
+          onPress={n.jobId ? () => onOpenJob(n.jobId!) : n.kind === 'licensePending' ? () => Linking.openURL(ADMIN_URL) : undefined} />
       ))}
       <BackButton onPress={onBack} />
     </ScrollView>
@@ -205,69 +208,3 @@ export function DeleteAccountCard() {
   );
 }
 
-// Ameer's office: review licences, reports and disputes.
-export function OperatorPanel({ onOpenJob, onBack }: { onOpenJob: (id: string) => void; onBack: () => void }) {
-  const { t } = useLang();
-  const [tab, setTab] = useState<'licenses' | 'reports' | 'disputes'>('licenses');
-  const [providers, setProviders] = useState<data.PendingProvider[]>([]);
-  const [reports, setReports] = useState<data.OpenReport[]>([]);
-  const [disputes, setDisputes] = useState<data.OpenDispute[]>([]);
-  const [note, setNote] = useState('');
-  const [err, setErr] = useState('');
-  const load = useCallback(() => {
-    Promise.all([data.pendingProviders(), data.openReports(), data.openDisputes()])
-      .then(([p, r, d]) => { setProviders(p); setReports(r); setDisputes(d); setErr(''); })
-      .catch(() => setErr(t('somethingWrong')));
-  }, []);
-  useEffect(load, [load]);
-  const act = (fn: () => Promise<unknown>) => async () => { try { await fn(); } catch { setErr(t('somethingWrong')); } load(); };
-  const tabs: { key: typeof tab; icon: IconName; count: number }[] = [
-    { key: 'licenses', icon: 'card-account-details-outline', count: providers.length },
-    { key: 'reports', icon: 'flag-outline', count: reports.length },
-    { key: 'disputes', icon: 'scale-balance', count: disputes.length },
-  ];
-  return (
-    <ScrollView keyboardShouldPersistTaps="handled">
-      <H>{t('operatorPanel')}</H>
-      {tabs.map((x) => (
-        <OptionRow key={x.key} icon={x.icon} tone={tab === x.key ? 'accent' : 'primary'}
-          title={`${t(`op.${x.key}`)} (${x.count})`} onPress={() => setTab(x.key)} />
-      ))}
-      {!!err && <P small>{err}</P>}
-      {tab === 'licenses' && providers.map((p) => (
-        <Card key={p.id}>
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <IconCircle name="account-hard-hat" />
-            <View style={{ flex: 1 }}><P>{p.name}</P><P muted small>{[t(p.kind), p.licenseNo].filter(Boolean).join(' · ')}</P></View>
-          </View>
-          {p.docUrl && <Button title={t('viewLicense')} icon="file-eye-outline" secondary onPress={() => Linking.openURL(p.docUrl!)} />}
-          <Button title={t('approve')} icon="check" onPress={act(() => data.reviewProvider(p.id, true))} />
-          <Button title={t('reject')} secondary onPress={act(() => data.reviewProvider(p.id, false))} />
-        </Card>
-      ))}
-      {tab === 'reports' && reports.map((r) => (
-        <Card key={r.id}>
-          <P>{r.reason}</P>
-          <P muted small>{[r.targetName, r.postId ? t('op.aboutPost') : r.chatId ? t('op.aboutChat') : '', r.at.slice(0, 10)].filter(Boolean).join(' · ')}</P>
-          {r.postId && <Button title={t('op.hidePostClose')} onPress={act(() => data.closeReport(r.id, true))} />}
-          <Button title={t('op.close')} secondary onPress={act(() => data.closeReport(r.id, false))} />
-        </Card>
-      ))}
-      {tab === 'disputes' && disputes.map((d) => (
-        <Card key={d.id}>
-          <P>{d.service ? t(`service.${d.service}`) : ''}</P>
-          <P muted small>{`${d.at.slice(0, 10)} · ${d.reason}`}</P>
-          <Button title={t('op.openJob')} secondary onPress={() => onOpenJob(d.jobId)} />
-          <P muted small>{t('op.checkFiles')}</P>
-          <Field label={t('op.note')} value={note} onChange={setNote} multiline />
-          <P muted small>{t('op.correctionHint')}</P>
-          <Button title={t('op.correction')} icon="wrench-outline" disabled={!note.trim()} onPress={act(() => data.requestCorrection(d.id, note))} />
-          <Button title={t('op.refund')} onPress={act(() => data.resolveDispute(d.id, true, note))} />
-          <Button title={t('op.release')} secondary onPress={act(() => data.resolveDispute(d.id, false, note))} />
-        </Card>
-      ))}
-      <View style={{ height: 1, backgroundColor: colors.line, marginVertical: 4 }} />
-      <BackButton onPress={onBack} />
-    </ScrollView>
-  );
-}

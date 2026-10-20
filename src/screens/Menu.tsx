@@ -20,9 +20,9 @@ function Item({ icon, title, onPress, right, danger }: {
 }
 
 // The ☰ menu: account items when signed in, plus night mode and language for everyone.
-export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, onSettings, onOperator, onSignOut }: {
+export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, onSettings, onSignOut }: {
   open: boolean; onClose: () => void; signedIn: boolean; onHome: () => void;
-  onProfile: () => void; onHistory: () => void; onSettings: () => void; onOperator?: () => void; onSignOut: () => void;
+  onProfile: () => void; onHistory: () => void; onSettings: () => void; onSignOut: () => void;
 }) {
   const { t, rtl, dark, toggleDark, toggleLang } = useLang();
   const insets = useSafeAreaInsets();
@@ -41,7 +41,6 @@ export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, on
               <Item icon="account-circle-outline" title={t('myProfile')} onPress={go(onProfile)} />
               <Item icon="history" title={t('history')} onPress={go(onHistory)} />
               <Item icon="cog-outline" title={t('settings')} onPress={go(onSettings)} />
-              {onOperator && <Item icon="shield-account-outline" title={t('operatorPanel')} onPress={go(onOperator)} />}
             </>
           )}
           <Item icon="weather-night" title={t('nightMode')} onPress={toggleDark}

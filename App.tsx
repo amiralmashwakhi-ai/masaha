@@ -11,7 +11,7 @@ import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
 import { Menu } from './src/screens/Menu';
 import { PostEditor, PostFeed } from './src/screens/Posts';
-import { NeedLicense, Notifications, OperatorPanel } from './src/screens/Safety';
+import { NeedLicense, Notifications } from './src/screens/Safety';
 import { Settings } from './src/screens/Settings';
 import { Chats } from './src/screens/Chats';
 import { Tab, TabBar } from './src/screens/TabBar';
@@ -25,7 +25,7 @@ import { colors, Header, LangCtx, P, setDark } from './src/ui';
 
 type Screen =
   | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId; providerId?: string } | { name: 'editProvider' } | { name: 'settings' }
-  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'operator' }
+  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' }
   | { name: 'chats' }
   | { name: 'job'; id: string; back?: Screen; chat?: boolean } | { name: 'profile'; id: string; back: Screen };
 
@@ -42,7 +42,6 @@ export default function App() {
   const [error, setError] = useState('');
   const [unread, setUnread] = useState(0);
   const [chatUnread, setChatUnread] = useState(0);
-  const [operator, setOperator] = useState(false);
   // A job opened from the admin panel may not be in the user's own list.
   const [extraJob, setExtraJob] = useState<Job | null>(null);
 
@@ -89,8 +88,7 @@ export default function App() {
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
-    if (!userId || !profile) { setOperator(false); setUnread(0); setChatUnread(0); return; }
-    data.isOperator(userId).then(setOperator).catch(() => setOperator(false));
+    if (!userId || !profile) { setUnread(0); setChatUnread(0); return; }
     const poll = () => {
       data.unreadCount().then(setUnread).catch(() => {});
       data.chatUnreadTotal().then(setChatUnread).catch(() => {});
@@ -242,10 +240,7 @@ export default function App() {
               />
             )}
             {ready && screen.name === 'notifications' && (
-              <Notifications onOpenJob={openAnyJob} onOpenOperator={() => setScreen({ name: 'operator' })} onBack={goHome} />
-            )}
-            {ready && screen.name === 'operator' && operator && (
-              <OperatorPanel onOpenJob={openAnyJob} onBack={goHome} />
+              <Notifications onOpenJob={openAnyJob} onBack={goHome} />
             )}
             {ready && screen.name === 'jobs' && (
               role === 'provider' && !me?.verified ? <NeedLicense onSettings={() => setScreen({ name: 'settings' })} /> : <JobList
@@ -312,7 +307,6 @@ export default function App() {
             onProfile={() => (role === 'provider' && me ? openProfile(me.id) : setScreen({ name: 'settings' }))}
             onHistory={() => setScreen({ name: 'history' })}
             onSettings={() => setScreen({ name: 'settings' })}
-            onOperator={operator ? () => setScreen({ name: 'operator' }) : undefined}
             onSignOut={() => { signOut(); goHome(); }}
           />
           <StatusBar style={dark ? 'light' : 'dark'} />

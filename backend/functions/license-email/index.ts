@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     <p>رقم الرخصة: <b>${esc(p.license_no ?? '-')}</b></p>
     <p>البريد: ${esc(user.email ?? '-')}</p>
     ${link?.signedUrl ? `<p><a href="${link.signedUrl}">فتح ملف الرخصة</a> (الرابط صالح 7 أيام)</p>` : ''}
-    <p>للقبول أو الرفض: تطبيق مساحة ← ☰ ← إدارة مساحة.</p></div>`;
+    <p>للقبول أو الرفض: <a href="https://masaha-kappa.vercel.app/admin.html">صفحة إدارة مساحة</a>.</p></div>`;
 
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
