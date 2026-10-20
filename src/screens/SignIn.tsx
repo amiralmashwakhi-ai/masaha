@@ -72,7 +72,6 @@ export function CreateProfile({ userId, defaultName, onDone }: { userId: string;
   const [name, setName] = useState(defaultName ?? '');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<Role>('customer');
-  const [kind, setKind] = useState<'individual' | 'office'>('individual');
   const [error, setError] = useState('');
   const [agreed, setAgreed] = useState(false);
   const pick = (on: boolean) => (on ? 'primary' : 'accent');
@@ -84,12 +83,6 @@ export function CreateProfile({ userId, defaultName, onDone }: { userId: string;
       <Field label={t('phone')} value={phone} onChange={setPhone} numeric />
       <OptionRow icon={role === 'customer' ? 'check-circle' : 'account'} tone={pick(role === 'customer')} title={t('iAmCustomer')} subtitle={t('customerHint')} onPress={() => setRole('customer')} />
       <OptionRow icon={role === 'provider' ? 'check-circle' : 'account-hard-hat'} tone={pick(role === 'provider')} title={t('iAmProvider')} subtitle={t('providerHint')} onPress={() => setRole('provider')} />
-      {role === 'provider' && (
-        <>
-          <OptionRow icon={kind === 'individual' ? 'check-circle' : 'account-tie'} tone={pick(kind === 'individual')} title={t('individual')} onPress={() => setKind('individual')} />
-          <OptionRow icon={kind === 'office' ? 'check-circle' : 'office-building'} tone={pick(kind === 'office')} title={t('office')} onPress={() => setKind('office')} />
-        </>
-      )}
       <OptionRow icon={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'} tone={pick(agreed)} title={t('termsAgree')} onPress={() => setAgreed(!agreed)} />
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
         <LinkText title={t('readTerms')} onPress={() => Linking.openURL(`${SITE}/terms.html`)} />
@@ -97,7 +90,7 @@ export function CreateProfile({ userId, defaultName, onDone }: { userId: string;
       </View>
       <Button title={t('next')} disabled={!agreed || !name.trim()} onPress={async () => {
         if (!name.trim() || !agreed) return;
-        const e = await createProfile(userId, name.trim(), phone.trim(), role, kind);
+        const e = await createProfile(userId, name.trim(), phone.trim(), role);
         if (e) setError(e.message); else onDone();
       }} />
       {!!error && <P small>{error}</P>}

@@ -30,11 +30,11 @@ export async function loadProfile(userId: string) {
   return data as Profile | null;
 }
 
-export async function createProfile(userId: string, fullName: string, phone: string, role: Role, providerKind?: 'individual' | 'office') {
+export async function createProfile(userId: string, fullName: string, phone: string, role: Role) {
   const { error } = await supabase.from('profiles').insert({ id: userId, full_name: fullName, phone, role, terms_accepted_at: new Date().toISOString() });
   if (error) return error;
   if (role === 'provider') {
-    const res = await supabase.from('providers').insert({ id: userId, kind: providerKind ?? 'individual', display_name: fullName });
+    const res = await supabase.from('providers').insert({ id: userId, kind: 'office', display_name: fullName });
     return res.error;
   }
   return null;

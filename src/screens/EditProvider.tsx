@@ -11,7 +11,6 @@ export function EditProvider({ provider, onSave, onBack }: {
 }) {
   const { t } = useLang();
   const [name, setName] = useState(provider.name);
-  const [kind, setKind] = useState(provider.kind);
   const [license, setLicense] = useState(provider.licenseNo ?? '');
   const [years, setYears] = useState(String(provider.experienceYears || ''));
   const [education, setEducation] = useState(provider.cv.education);
@@ -27,10 +26,6 @@ export function EditProvider({ provider, onSave, onBack }: {
     <ScrollView>
       <H>{t('myProfile')}</H>
       <Field label={t('displayName')} value={name} onChange={setName} />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1 }}><Button title={t('individual')} onPress={() => setKind('individual')} secondary={kind !== 'individual'} /></View>
-        <View style={{ flex: 1 }}><Button title={t('office')} onPress={() => setKind('office')} secondary={kind !== 'office'} /></View>
-      </View>
       <Field label={t('licenseNo')} value={license} onChange={setLicense} />
       <Field label={t('experienceYears')} value={years} onChange={setYears} numeric />
       <Field label={t('education')} value={education} onChange={setEducation} />
@@ -56,7 +51,7 @@ export function EditProvider({ provider, onSave, onBack }: {
         onPress={async () => {
           try {
             await onSave({
-              ...provider, name: name.trim() || provider.name, kind, licenseNo: license.trim() || undefined,
+              ...provider, name: name.trim() || provider.name, licenseNo: license.trim() || undefined, kind: 'office',
               experienceYears: Number(years) || 0,
               cv: { education: education.trim(), experience: lines(experience), equipment: lines(equipment) },
               services, otherServices: other.trim() || undefined, governorates: govs,

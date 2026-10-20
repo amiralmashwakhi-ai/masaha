@@ -5,7 +5,7 @@ Surveying services broker app for Jordan. Expo (React Native), TypeScript, Arabi
 Run: `npm install`, then `npx expo start` and scan the QR code with Expo Go on Android or iOS.
 
 Current state: connected to the live Supabase project "masaha".
-- Sign up / sign in with email and password; new users pick customer or provider (individual or office).
+- Sign up / sign in with email and password; new users pick customer or provider (a licensed surveying office).
 - Customer: request a survey by Lands and Survey plot location, compare quotes, open each provider's CV and reviews,
   accept a quote, sign the agreement, pay into escrow, release 30% after field work and 70% on delivery.
 - Provider: fill in CV and profile, see open requests and the customer's past reviews, quote (10% commission shown),
