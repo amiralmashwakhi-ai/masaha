@@ -3,10 +3,11 @@ import { Text, View } from 'react-native';
 import * as data from '../data';
 import { Job, Provider, Role } from '../types';
 import { Button, Card, colors, Field, IconCircle, P, useLang } from '../ui';
+import { ReportBlock } from './Safety';
 
 const POLL_MS = 4000;
 
-function Conversation({ chatId, userId }: { chatId: string; userId: string }) {
+function Conversation({ chatId, userId, otherId }: { chatId: string; userId: string; otherId: string }) {
   const { t, rtl } = useLang();
   const [messages, setMessages] = useState<data.ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -42,6 +43,7 @@ function Conversation({ chatId, userId }: { chatId: string; userId: string }) {
       <Field label={t('writeMessage')} value={draft} onChange={(v) => setDraft(data.stripDigits(v))} multiline />
       <P muted small>{t('noNumbersHint')}</P>
       <Button title={t('send')} icon="send" onPress={send} disabled={!draft.trim()} />
+      <ReportBlock reporterId={userId} userId={otherId} chatId={chatId} canBlock />
     </View>
   );
 }
@@ -101,7 +103,7 @@ export function ChatCard({ job, role, userId, providers }: { job: Job; role: Rol
             {chat?.status === 'accepted' && (
               open === chat.id
                 ? <>
-                    <Conversation chatId={chat.id} userId={userId} />
+                    <Conversation chatId={chat.id} userId={userId} otherId={role === 'provider' ? job.customerId : pid} />
                     <Button title={t('closeChat')} secondary onPress={() => setOpen(null)} />
                   </>
                 : <Button title={t('openChat')} icon="chat-outline" onPress={() => setOpen(chat.id)} />

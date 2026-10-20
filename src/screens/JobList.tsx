@@ -15,7 +15,7 @@ function Progress({ stage }: { stage: Job['stage'] }) {
         ))}
       </View>
       <Text style={{ fontSize: 12, color: colors.primary, marginTop: 6, textAlign: rtl ? 'right' : 'left' }}>
-        {`${current + 1}/${JOB_STAGES.length} · ${t(`stage.${stage}`)}`}
+        {current < 0 ? t(`stage.${stage}`) : `${current + 1}/${JOB_STAGES.length} · ${t(`stage.${stage}`)}`}
       </Text>
     </View>
   );

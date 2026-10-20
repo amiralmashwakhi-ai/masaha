@@ -3,6 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { split } from '../money';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
 import { ChatCard } from './ChatCard';
+import { JobSafety } from './Safety';
 import { ReviewList } from './ReviewList';
 import { Button, Card, colors, Field, H, P, useLang } from '../ui';
 
@@ -16,8 +17,8 @@ export interface JobActions {
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onProfile, onBack }: {
-  job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions;
+export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, onBack }: {
+  job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions; onChanged: () => void;
   onProfile: (id: string) => void; onBack: () => void;
 }) {
   const { t } = useLang();
@@ -40,7 +41,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
   return (
     <ScrollView>
       <H>{t(`service.${job.service}`)}</H>
-      <P muted>{t(`stage.${job.stage}`)} ({JOB_STAGES.indexOf(job.stage) + 1}/{JOB_STAGES.length})</P>
+      <P muted>{JOB_STAGES.includes(job.stage) ? `${t(`stage.${job.stage}`)} (${JOB_STAGES.indexOf(job.stage) + 1}/${JOB_STAGES.length})` : t(`stage.${job.stage}`)}</P>
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}`}</P>}
 
       {!accepted && (
@@ -150,6 +151,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         <P>{t('record')}</P>
         {job.events.map((e, i) => <P key={i} muted>{`${e.at.slice(0, 16).replace('T', ' ')} · ${t(e.by)} · ${e.text}`}</P>)}
       </Card>
+      {(job.customerId === userId || job.providerId === userId) && <JobSafety job={job} role={role} onDone={onChanged} />}
       <Button title={t('back')} onPress={onBack} secondary />
     </ScrollView>
   );

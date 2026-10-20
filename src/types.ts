@@ -7,7 +7,8 @@ export type ServiceId =
 
 export type JobStage =
   | 'requested' | 'quoted' | 'agreed' | 'visitScheduled'
-  | 'fieldWork' | 'drafting' | 'submitted' | 'done';
+  | 'fieldWork' | 'drafting' | 'submitted' | 'done'
+  | 'cancelled' | 'disputed'; // off the normal path, not in JOB_STAGES
 
 export const JOB_STAGES: JobStage[] = [
   'requested', 'quoted', 'agreed', 'visitScheduled',

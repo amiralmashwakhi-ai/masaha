@@ -44,7 +44,7 @@ export function Logo({ size = 36 }: { size?: number }) {
 }
 
 // Shown on every screen: logo and name, and the ☰ menu in the top corner.
-export function Header({ onMenu }: { onMenu: () => void }) {
+export function Header({ onMenu, onBell, unread = 0 }: { onMenu: () => void; onBell?: () => void; unread?: number }) {
   const { t, rtl } = useLang();
   return (
     <View style={[s.header, rtl && { flexDirection: 'row-reverse' }]}>
@@ -52,9 +52,19 @@ export function Header({ onMenu }: { onMenu: () => void }) {
         <Logo size={34} />
         <Text style={s.brand}>{t('appName')}</Text>
       </View>
-      <Pressable onPress={onMenu} style={s.menuBtn} hitSlop={8} accessibilityLabel={t('menu')}>
-        <MaterialCommunityIcons name="menu" size={22} color={colors.primary} />
-      </Pressable>
+      <View style={[s.row, rtl && { flexDirection: 'row-reverse' }]}>
+        {onBell && (
+          <Pressable onPress={onBell} style={s.menuBtn} hitSlop={8} accessibilityLabel={t('notifications')}>
+            <MaterialCommunityIcons name={unread ? 'bell-badge-outline' : 'bell-outline'} size={21} color={colors.primary} />
+            {unread > 0 && (
+              <View style={s.badge}><Text style={s.badgeText}>{unread > 9 ? '9+' : unread}</Text></View>
+            )}
+          </Pressable>
+        )}
+        <Pressable onPress={onMenu} style={s.menuBtn} hitSlop={8} accessibilityLabel={t('menu')}>
+          <MaterialCommunityIcons name="menu" size={22} color={colors.primary} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -145,6 +155,8 @@ const makeStyles = () => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   brand: { fontSize: 17, fontWeight: '700', color: colors.primary },
   menuBtn: { backgroundColor: colors.primarySoft, width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   h: { fontSize: 19, fontWeight: '700', color: colors.ink, marginBottom: 8 },
   p: { fontSize: 14, color: colors.ink, lineHeight: 21 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },

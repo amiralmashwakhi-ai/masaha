@@ -11,6 +11,7 @@ import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
 import { Menu } from './src/screens/Menu';
 import { PostEditor, PostFeed } from './src/screens/Posts';
+import { Notifications, OperatorPanel } from './src/screens/Safety';
 import { Settings } from './src/screens/Settings';
 import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
@@ -22,7 +23,7 @@ import { colors, Header, LangCtx, P, setDark } from './src/ui';
 
 type Screen =
   | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId } | { name: 'editProvider' } | { name: 'settings' }
-  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' }
+  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'operator' }
   | { name: 'job'; id: string; back?: Screen } | { name: 'profile'; id: string; back: Screen };
 
 const PREFS = { lang: 'masaha.lang', dark: 'masaha.dark' };
@@ -36,6 +37,10 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [error, setError] = useState('');
+  const [unread, setUnread] = useState(0);
+  const [operator, setOperator] = useState(false);
+  // A job opened from the admin panel may not be in the user's own list.
+  const [extraJob, setExtraJob] = useState<Job | null>(null);
 
   const { session, loading } = useSession();
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
@@ -79,6 +84,15 @@ export default function App() {
   }, [userId, profile, role, ctx]);
   useEffect(() => { refresh(); }, [refresh]);
 
+  useEffect(() => {
+    if (!userId || !profile) { setOperator(false); setUnread(0); return; }
+    data.isOperator(userId).then(setOperator).catch(() => setOperator(false));
+    const poll = () => data.unreadCount().then(setUnread).catch(() => {});
+    poll();
+    const timer = setInterval(poll, 30000);
+    return () => clearInterval(timer);
+  }, [userId, profile]);
+
   // Runs a database action, then reloads so the screen always shows the stored state.
   const run = (fn: () => Promise<unknown>) => async () => {
     try { await fn(); } catch { setError(ctx.t('somethingWrong')); }
@@ -98,13 +112,15 @@ export default function App() {
     },
   };
 
-  const current = screen.name === 'job' ? jobs.find((j) => j.id === screen.id) : undefined;
+  const current = screen.name === 'job'
+    ? jobs.find((j) => j.id === screen.id) ?? (extraJob?.id === screen.id ? extraJob : undefined)
+    : undefined;
   const viewedProvider = screen.name === 'profile' ? providers.find((p) => p.id === screen.id) : undefined;
   const me = providers.find((p) => p.id === userId);
   const ready = session && profile;
   // The provider feed hides jobs another provider won; those stay in History.
   const visibleJobs = role === 'provider'
-    ? jobs.filter((j) => !j.providerId || j.providerId === userId)
+    ? jobs.filter((j) => j.providerId ? j.providerId === userId : j.stage !== 'cancelled')
     : jobs;
 
   // Providers seen in posts may not be loaded yet.
@@ -116,6 +132,12 @@ export default function App() {
     setScreen({ name: 'profile', id, back: screen });
   };
   const goHome = () => setScreen({ name: 'home' });
+  const openAnyJob = async (id: string) => {
+    if (!jobs.some((j) => j.id === id)) {
+      try { setExtraJob(await data.getJob(id)); } catch { setError(ctx.t('somethingWrong')); return; }
+    }
+    setScreen({ name: 'job', id, back: screen });
+  };
   const requestService = (service: ServiceId) => setScreen({ name: 'wizard', service });
 
   return (
@@ -123,7 +145,7 @@ export default function App() {
       <LangCtx.Provider value={ctx}>
         <SafeAreaView key={dark ? 'dark' : 'light'} edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.bg }}>
           <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 8 }}>
-            <Header onMenu={() => setMenuOpen(true)} />
+            <Header onMenu={() => setMenuOpen(true)} onBell={ready ? () => { setUnread(0); setScreen({ name: 'notifications' }); } : undefined} unread={unread} />
             {!loading && !session && <SignIn />}
             {session && profile === undefined && <P muted>{ctx.t('loading')}</P>}
             {session && profile === null && userId && (
@@ -162,6 +184,7 @@ export default function App() {
             {ready && screen.name === 'posts' && (
               <PostFeed
                 role={role}
+                userId={userId!}
                 onProvider={openProfile}
                 onRequest={requestService}
                 onNewPost={role === 'provider' && me ? () => setScreen({ name: 'newPost' }) : undefined}
@@ -179,6 +202,12 @@ export default function App() {
                 onOpenJob={(id) => setScreen({ name: 'job', id, back: screen })}
                 onBack={goHome}
               />
+            )}
+            {ready && screen.name === 'notifications' && (
+              <Notifications onOpenJob={openAnyJob} onBack={goHome} />
+            )}
+            {ready && screen.name === 'operator' && operator && (
+              <OperatorPanel onOpenJob={openAnyJob} onBack={goHome} />
             )}
             {ready && screen.name === 'jobs' && (
               <JobList
@@ -207,6 +236,10 @@ export default function App() {
                 providers={providers}
                 loadCustomerReviews={data.reviewsAbout}
                 actions={actions}
+                onChanged={async () => {
+                  await refresh();
+                  if (extraJob?.id === current.id) data.getJob(current.id).then(setExtraJob).catch(() => {});
+                }}
                 onProfile={openProfile}
                 onBack={() => setScreen(screen.back ?? { name: 'jobs' })}
               />
@@ -216,6 +249,7 @@ export default function App() {
                 provider={viewedProvider}
                 role={role}
                 mine={viewedProvider.id === userId}
+                viewerId={userId!}
                 onRequest={requestService}
                 onNewPost={() => setScreen({ name: 'newPost' })}
                 onEdit={() => setScreen({ name: 'editProvider' })}
@@ -230,6 +264,7 @@ export default function App() {
             onProfile={() => (role === 'provider' && me ? openProfile(me.id) : setScreen({ name: 'settings' }))}
             onHistory={() => setScreen({ name: 'history' })}
             onSettings={() => setScreen({ name: 'settings' })}
+            onOperator={operator ? () => setScreen({ name: 'operator' }) : undefined}
             onSignOut={() => { signOut(); goHome(); }}
           />
           <StatusBar style={dark ? 'light' : 'dark'} />

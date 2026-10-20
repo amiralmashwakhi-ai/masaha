@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import { createProfile, sendPasswordReset, signIn, signInWithGoogle, signUp } from '../auth';
 import { Role } from '../types';
 import { Button, colors, Field, H, LinkText, Logo, OptionRow, P, useLang } from '../ui';
@@ -65,6 +65,8 @@ export function SignIn() {
   );
 }
 
+const SITE = 'https://masaha-kappa.vercel.app';
+
 export function CreateProfile({ userId, defaultName, onDone }: { userId: string; defaultName?: string; onDone: () => void }) {
   const { t } = useLang();
   const [name, setName] = useState(defaultName ?? '');
@@ -72,6 +74,7 @@ export function CreateProfile({ userId, defaultName, onDone }: { userId: string;
   const [role, setRole] = useState<Role>('customer');
   const [kind, setKind] = useState<'individual' | 'office'>('individual');
   const [error, setError] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const pick = (on: boolean) => (on ? 'primary' : 'accent');
 
   return (
@@ -87,8 +90,13 @@ export function CreateProfile({ userId, defaultName, onDone }: { userId: string;
           <OptionRow icon={kind === 'office' ? 'check-circle' : 'office-building'} tone={pick(kind === 'office')} title={t('office')} onPress={() => setKind('office')} />
         </>
       )}
-      <Button title={t('next')} onPress={async () => {
-        if (!name.trim()) return;
+      <OptionRow icon={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'} tone={pick(agreed)} title={t('termsAgree')} onPress={() => setAgreed(!agreed)} />
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+        <LinkText title={t('readTerms')} onPress={() => Linking.openURL(`${SITE}/terms.html`)} />
+        <LinkText title={t('readPrivacy')} onPress={() => Linking.openURL(`${SITE}/privacy.html`)} />
+      </View>
+      <Button title={t('next')} disabled={!agreed || !name.trim()} onPress={async () => {
+        if (!name.trim() || !agreed) return;
         const e = await createProfile(userId, name.trim(), phone.trim(), role, kind);
         if (e) setError(e.message); else onDone();
       }} />

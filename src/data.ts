@@ -57,6 +57,12 @@ export async function listJobs(role: Role, userId: string) {
   return (data as unknown as JobRow[]).map(toJob);
 }
 
+export async function getJob(id: string) {
+  const { data, error } = await supabase.from('jobs').select(JOB_SELECT).eq('id', id).single();
+  if (error) throw error;
+  return toJob(data as unknown as JobRow);
+}
+
 export async function createJob(userId: string, r: ServiceRequest) {
   const { error } = await supabase.from('jobs').insert({
     customer_id: userId, service: r.service, governorate: r.location.governorate,
@@ -271,3 +277,116 @@ export async function uploadPostFile(userId: string, uri: string, name: string, 
   const url = supabase.storage.from('posts').getPublicUrl(path).data.publicUrl;
   return { url, name, kind: mime.startsWith('image/') ? 'image' : 'document' };
 }
+
+// In-app notifications, written by the server when something happens to the user's jobs or chats.
+export interface AppNotification { id: number; kind: string; jobId?: string; service?: ServiceId; at: string; read: boolean }
+
+export async function listNotifications(): Promise<AppNotification[]> {
+  const { data, error } = await supabase.from('notifications').select('id, kind, job_id, service, created_at, read_at')
+    .order('created_at', { ascending: false }).limit(50);
+  if (error) throw error;
+  return data.map((n) => ({ id: n.id, kind: n.kind, jobId: n.job_id ?? undefined, service: n.service ?? undefined, at: n.created_at, read: !!n.read_at }));
+}
+
+export async function unreadCount() {
+  const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
+  return count ?? 0;
+}
+
+export async function markAllRead() {
+  await supabase.from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null);
+}
+
+// Report and block.
+export async function report(reporterId: string, target: { userId?: string; postId?: string; chatId?: string }, reason: string) {
+  const { error } = await supabase.from('reports').insert({
+    reporter_id: reporterId, target_user: target.userId ?? null, post_id: target.postId ?? null, chat_id: target.chatId ?? null,
+    reason: reason.trim().slice(0, 500),
+  });
+  if (error) throw error;
+}
+
+export async function listBlocked(): Promise<string[]> {
+  const { data } = await supabase.from('blocks').select('blocked_id');
+  return (data ?? []).map((b) => b.blocked_id);
+}
+
+export async function block(blockerId: string, blockedId: string) {
+  const { error } = await supabase.from('blocks').upsert({ blocker_id: blockerId, blocked_id: blockedId });
+  if (error) throw error;
+}
+
+export async function unblock(blockedId: string) {
+  const { error } = await supabase.from('blocks').delete().eq('blocked_id', blockedId);
+  if (error) throw error;
+}
+
+// Cancel before payment; dispute after payment (money stays held until the operator decides).
+export const cancelJob = (jobId: string) => rpc('cancel_job', { p_job: jobId });
+export const openDispute = (jobId: string, reason: string) => rpc('open_dispute', { p_job: jobId, p_reason: reason });
+
+// Erases personal details and blocks sign-in; fails while a paid job is still open.
+export async function deleteMyAccount(): Promise<'ok' | 'activeJobs' | 'error'> {
+  const { error } = await supabase.rpc('delete_my_account');
+  if (!error) { await supabase.auth.signOut(); return 'ok'; }
+  return error.message.includes('active jobs') ? 'activeJobs' : 'error';
+}
+
+// Licence check: the document goes to the private "licenses" bucket, then the operator reviews it.
+export async function submitLicense(userId: string, uri: string, name: string, mime: string, licenseNo: string) {
+  const body = await (await fetch(uri)).arrayBuffer();
+  const path = `${userId}/${Date.now()}-${name.replace(/[^\w.\-]+/g, '_').slice(-60) || 'licence'}`;
+  const { error } = await supabase.storage.from('licenses').upload(path, body, { contentType: mime });
+  if (error) throw error;
+  await rpc('submit_license', { p_path: path, p_license_no: licenseNo });
+}
+
+export async function verificationStatus(userId: string): Promise<'none' | 'pending' | 'verified' | 'rejected'> {
+  const { data } = await supabase.from('providers').select('verification_status').eq('id', userId).maybeSingle();
+  return (data?.verification_status as 'none' | 'pending' | 'verified' | 'rejected') ?? 'none';
+}
+
+// Operator (Ameer's office) tools.
+export async function isOperator(userId: string) {
+  const { data } = await supabase.from('operators').select('user_id').eq('user_id', userId).maybeSingle();
+  return !!data;
+}
+
+export interface PendingProvider { id: string; name: string; kind: string; licenseNo?: string; docUrl?: string }
+export async function pendingProviders(): Promise<PendingProvider[]> {
+  const { data, error } = await supabase.from('providers').select('id, display_name, kind, license_no, license_doc_path')
+    .eq('verification_status', 'pending');
+  if (error) throw error;
+  return Promise.all(data.map(async (p) => ({
+    id: p.id, name: p.display_name, kind: p.kind, licenseNo: p.license_no ?? undefined,
+    docUrl: p.license_doc_path
+      ? (await supabase.storage.from('licenses').createSignedUrl(p.license_doc_path, 600)).data?.signedUrl
+      : undefined,
+  })));
+}
+export const reviewProvider = (id: string, approve: boolean) => rpc('review_provider', { p_provider: id, p_approve: approve });
+
+export interface OpenReport { id: string; reason: string; at: string; postId?: string; chatId?: string; targetName?: string }
+export async function openReports(): Promise<OpenReport[]> {
+  const { data, error } = await supabase.from('reports').select('id, reason, created_at, post_id, chat_id, target_user')
+    .eq('status', 'open').order('created_at', { ascending: false });
+  if (error) throw error;
+  const ids = [...new Set(data.map((r) => r.target_user).filter(Boolean))] as string[];
+  const { data: names } = ids.length ? await supabase.from('providers').select('id, display_name').in('id', ids) : { data: [] };
+  return data.map((r) => ({
+    id: r.id, reason: r.reason, at: r.created_at, postId: r.post_id ?? undefined, chatId: r.chat_id ?? undefined,
+    targetName: (names ?? []).find((n: { id: string }) => n.id === r.target_user)?.display_name,
+  }));
+}
+export const closeReport = (id: string, hidePost: boolean) => rpc('close_report', { p_report: id, p_hide_post: hidePost });
+
+export interface OpenDispute { id: string; jobId: string; reason: string; at: string; service?: ServiceId }
+export async function openDisputes(): Promise<OpenDispute[]> {
+  const { data, error } = await supabase.from('disputes').select('id, job_id, reason, opened_at, jobs(service)')
+    .is('closed_at', null).order('opened_at');
+  if (error) throw error;
+  return (data as unknown as { id: string; job_id: string; reason: string; opened_at: string; jobs: { service: ServiceId } | null }[])
+    .map((d) => ({ id: d.id, jobId: d.job_id, reason: d.reason, at: d.opened_at, service: d.jobs?.service }));
+}
+export const resolveDispute = (id: string, refund: boolean, note: string) =>
+  rpc('resolve_dispute', { p_dispute: id, p_refund: refund, p_note: note });

@@ -7,6 +7,7 @@ import * as data from '../data';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Attachment, Role, ServiceId, ServicePost } from '../types';
 import { Button, Card, colors, Field, H, IconCircle, OptionRow, P, useLang } from '../ui';
+import { ReportBlock } from './Safety';
 
 function Attachments({ items }: { items: Attachment[] }) {
   const { rtl } = useLang();
@@ -34,8 +35,8 @@ function Attachments({ items }: { items: Attachment[] }) {
   );
 }
 
-export function PostCard({ post, role, mine, onProvider, onRequest, onChanged }: {
-  post: ServicePost; role: Role; mine?: boolean;
+export function PostCard({ post, role, mine, viewerId, onProvider, onRequest, onChanged }: {
+  post: ServicePost; role: Role; mine?: boolean; viewerId?: string;
   onProvider?: (id: string) => void; onRequest?: (service: ServiceId) => void; onChanged?: () => void;
 }) {
   const { t, rtl } = useLang();
@@ -69,19 +70,25 @@ export function PostCard({ post, role, mine, onProvider, onRequest, onChanged }:
           <Button title={t('deletePost')} secondary onPress={act(() => data.deletePost(post.id))} />
         </>
       )}
+      {!mine && viewerId && <ReportBlock reporterId={viewerId} userId={post.providerId} postId={post.id} canBlock onBlocked={onChanged} />}
     </Card>
   );
 }
 
 // Everyone can browse providers' offers; customers can turn one into a request.
-export function PostFeed({ role, onProvider, onRequest, onNewPost, onBack }: {
-  role: Role; onProvider: (id: string) => void; onRequest: (service: ServiceId) => void; onNewPost?: () => void; onBack: () => void;
+export function PostFeed({ role, userId, onProvider, onRequest, onNewPost, onBack }: {
+  role: Role; userId: string; onProvider: (id: string) => void; onRequest: (service: ServiceId) => void; onNewPost?: () => void; onBack: () => void;
 }) {
   const { t } = useLang();
   const [posts, setPosts] = useState<ServicePost[] | null>(null);
   const [filter, setFilter] = useState<ServiceId | null>(null);
-  useEffect(() => { data.listPosts().then(setPosts).catch(() => setPosts([])); }, []);
-  const shown = (posts ?? []).filter((p) => !filter || p.service === filter);
+  const [blocked, setBlocked] = useState<string[]>([]);
+  const load = () => {
+    data.listPosts().then(setPosts).catch(() => setPosts([]));
+    data.listBlocked().then(setBlocked).catch(() => {});
+  };
+  useEffect(load, []);
+  const shown = (posts ?? []).filter((p) => (!filter || p.service === filter) && !blocked.includes(p.providerId));
   return (
     <ScrollView>
       <H>{t('browseServices')}</H>
@@ -99,7 +106,7 @@ export function PostFeed({ role, onProvider, onRequest, onNewPost, onBack }: {
       </ScrollView>
       {posts === null && <P muted>{t('loading')}</P>}
       {posts !== null && shown.length === 0 && <P muted>{t('noPosts')}</P>}
-      {shown.map((p) => <PostCard key={p.id} post={p} role={role} onProvider={onProvider} onRequest={onRequest} />)}
+      {shown.map((p) => <PostCard key={p.id} post={p} role={role} mine={p.providerId === userId} viewerId={userId} onProvider={onProvider} onRequest={onRequest} onChanged={load} />)}
       <Button title={t('back')} onPress={onBack} secondary />
     </ScrollView>
   );

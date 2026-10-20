@@ -5,10 +5,11 @@ import { avgStars } from '../money';
 import { Provider, Role, ServiceId, ServicePost } from '../types';
 import { Button, Card, H, P, useLang } from '../ui';
 import { PostCard } from './Posts';
+import { ReportBlock } from './Safety';
 import { ReviewList } from './ReviewList';
 
-export function ProviderProfile({ provider, role, mine, onRequest, onNewPost, onEdit, onBack }: {
-  provider: Provider; role: Role; mine: boolean;
+export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onNewPost, onEdit, onBack }: {
+  provider: Provider; role: Role; mine: boolean; viewerId: string;
   onRequest: (service: ServiceId) => void; onNewPost?: () => void; onEdit?: () => void; onBack: () => void;
 }) {
   const { t } = useLang();
@@ -27,6 +28,7 @@ export function ProviderProfile({ provider, role, mine, onRequest, onNewPost, on
           `${provider.experienceYears} ${t('years')}`].join(' · ')}
       </P>
       {provider.licenseNo && <P muted>{provider.licenseNo}</P>}
+      {!provider.verified && !mine && <Card><P small>{`⚠ ${t('unverifiedWarn')}`}</P></Card>}
       <Card>
         <P>{t('cv')}</P>
         <P muted>{`${t('education')}: ${provider.cv.education}`}</P>
@@ -38,9 +40,10 @@ export function ProviderProfile({ provider, role, mine, onRequest, onNewPost, on
       <H>{t('postsOnProfile')}</H>
       {mine && onNewPost && <Button title={t('newPost')} icon="plus" onPress={onNewPost} />}
       {posts.length === 0 && <P muted>{t('noPosts')}</P>}
-      {posts.map((p) => <PostCard key={p.id} post={p} role={role} mine={mine} onRequest={onRequest} onChanged={loadPosts} />)}
+      {posts.map((p) => <PostCard key={p.id} post={p} role={role} mine={mine} viewerId={mine ? undefined : viewerId} onRequest={onRequest} onChanged={loadPosts} />)}
       <P>{`★ ${stars || '-'} (${provider.reviews.length})`}</P>
       <ReviewList reviews={provider.reviews} />
+      {!mine && <ReportBlock reporterId={viewerId} userId={provider.id} canBlock onBlocked={onBack} />}
       <Button title={t('back')} onPress={onBack} secondary />
     </ScrollView>
   );
