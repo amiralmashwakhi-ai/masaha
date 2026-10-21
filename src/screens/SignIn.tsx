@@ -4,7 +4,7 @@ import { createProfile, sendPasswordReset, signIn, signInWithGoogle, signUp } fr
 import { Role } from '../types';
 import { Button, colors, Field, H, LinkText, Logo, OptionRow, P, useLang } from '../ui';
 
-export function SignIn() {
+export function SignIn({ onFaq, onGuide }: { onFaq: () => void; onGuide: () => void }) {
   const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,6 +61,10 @@ export function SignIn() {
         onPress={() => { setMode(mode === 'signIn' ? 'signUp' : 'signIn'); setInfo(''); }}
       />
       {!!info && <View style={{ backgroundColor: colors.accentSoft, borderRadius: 12, padding: 10, marginTop: 8 }}><P small>{info}</P></View>}
+      <View style={{ marginTop: 16 }}>
+        <OptionRow icon="help-circle-outline" title={t('faq')} subtitle={t('faqShort')} onPress={onFaq} />
+        <OptionRow icon="map-legend" tone="accent" title={t('guide')} subtitle={t('guideShort')} onPress={onGuide} />
+      </View>
     </ScrollView>
   );
 }

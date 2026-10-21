@@ -11,7 +11,7 @@ function TabItem({ icon, title, active, badge, onPress }: { icon: IconName; titl
   return (
     <Pressable onPress={onPress} style={{ flex: 1, alignItems: 'center', paddingTop: 8, paddingBottom: 6 }}>
       <View>
-        <MaterialCommunityIcons name={icon} size={25} color={tint} />
+        <MaterialCommunityIcons name={icon} size={27} color={tint} />
         {!!badge && (
           <View style={{ position: 'absolute', top: -5, right: -10, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
             backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' }}>
@@ -19,7 +19,7 @@ function TabItem({ icon, title, active, badge, onPress }: { icon: IconName; titl
           </View>
         )}
       </View>
-      <Text style={{ fontSize: 11, marginTop: 2, color: tint, fontWeight: active ? '700' : '400' }}>{title}</Text>
+      <Text style={{ fontSize: 12, marginTop: 3, color: tint, fontWeight: active ? '700' : '400' }}>{title}</Text>
     </Pressable>
   );
 }
@@ -34,12 +34,12 @@ export function TabBar({ role, active, chatUnread, onTab }: { role: Role; active
       <TabItem icon="home-variant" title={t('home')} active={active === 'home'} onPress={() => onTab('home')} />
       <TabItem icon="chat-processing" title={t('myChats')} active={active === 'chats'} badge={chatUnread} onPress={() => onTab('chats')} />
       <Pressable onPress={() => onTab('add')} style={{ flex: 1.2, alignItems: 'center', paddingBottom: 6 }}>
-        <View style={{ width: 58, height: 58, borderRadius: 29, marginTop: -22, backgroundColor: colors.accent,
+        <View style={{ width: 62, height: 62, borderRadius: 31, marginTop: -24, backgroundColor: colors.accent,
           alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: colors.card, elevation: 4,
           shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6 }}>
           <MaterialCommunityIcons name="plus" size={30} color="#fff" />
         </View>
-        <Text style={{ fontSize: 11, marginTop: 2, color: colors.ink, fontWeight: '700' }}>{provider ? t('addService') : t('addRequest')}</Text>
+        <Text style={{ fontSize: 12, marginTop: 3, color: colors.ink, fontWeight: '700' }}>{provider ? t('addService') : t('addRequest')}</Text>
       </Pressable>
       <TabItem icon={provider ? 'briefcase-outline' : 'clipboard-list-outline'} title={provider ? t('myServices') : t('myRequests')}
         active={active === 'mine'} onPress={() => onTab('mine')} />

@@ -28,7 +28,7 @@ export function CustomerProfile({ id, onBack }: { id: string; onBack: () => void
         { value: String(reviews.length), label: t('reviewsCount') },
       ]} />
       <Card>
-        <P>{t('customerRating')}</P>
+        <P title>{t('customerRating')}</P>
         {reviews.length ? <ReviewList reviews={reviews} /> : <P muted small>{t('noCustomerReviews')}</P>}
       </Card>
       <BackButton onPress={onBack} />

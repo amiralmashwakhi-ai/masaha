@@ -192,7 +192,7 @@ export function PostEditor({ userId, onDone, onBack }: { userId: string; onDone:
         ))}
       </ScrollView>
       <Card>
-        <P>{t('attachments')}</P>
+        <P title>{t('attachments')}</P>
         <Attachments items={files} />
         {files.length > 0 && <Button title={t('removeLastFile')} secondary onPress={() => setFiles(files.slice(0, -1))} />}
         <Button title={t('addPhotos')} icon="image-plus" secondary disabled={busy} onPress={pickPhotos} />

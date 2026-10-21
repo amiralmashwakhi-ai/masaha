@@ -68,14 +68,14 @@ export function Settings({ profile, isProvider, onChanged, onSignOut, onBack }: 
       </Pressable>
 
       <Card>
-        <P>{t('personalInfo')}</P>
+        <P title>{t('personalInfo')}</P>
         <Field label={t('fullName')} value={name} onChange={setName} />
         <Field label={t('phone')} value={phone} onChange={setPhone} numeric />
         <Button title={t('save')} onPress={() => tryIt(async () => { await data.updateProfile(profile.id, { full_name: name.trim(), phone: phone.trim() }); onChanged(); }, t('saved'))} />
       </Card>
 
       <Card>
-        <P>{t('changePassword')}</P>
+        <P title>{t('changePassword')}</P>
         <Field label={t('newPassword')} value={pw} onChange={setPw} secure />
         <Field label={t('confirmPassword')} value={pw2} onChange={setPw2} secure />
         <Button
@@ -90,7 +90,7 @@ export function Settings({ profile, isProvider, onChanged, onSignOut, onBack }: 
       </Card>
 
       <Card>
-        <P>{t('paymentMethods')}</P>
+        <P title>{t('paymentMethods')}</P>
         <P muted small>{isProvider ? t('payoutHint') : t('payHint')}</P>
         {methods.map((m) => (
           <View key={m.id} style={{ flexDirection: row, alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderColor: colors.line }}>

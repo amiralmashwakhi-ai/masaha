@@ -40,7 +40,7 @@ export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onD
       {!provider.verified && !mine && <Card><P small>{`⚠ ${t('unverifiedWarn')}`}</P></Card>}
       {(provider.services.length > 0 || !!provider.otherServices) && (
         <Card>
-          <P>{t('servicesOffered')}</P>
+          <P title>{t('servicesOffered')}</P>
           <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
             {provider.services.filter((s) => s !== 'other').map((s) => <Pill key={s} text={t(`service.${s}`)} />)}
             {provider.governorates.map((g) => <Pill key={g} text={t(`gov.${g}`)} tone="accent" icon="map-marker-outline" />)}
@@ -49,7 +49,7 @@ export function ProviderProfile({ provider, role, mine, viewerId, onRequest, onD
         </Card>
       )}
       <Card>
-        <P>{t('cv')}</P>
+        <P title>{t('cv')}</P>
         <P muted>{`${t('education')}: ${provider.cv.education}`}</P>
         <P muted>{`${t('experience')}:`}</P>
         {provider.cv.experience.map((e) => <P key={e} muted>{`• ${e}`}</P>)}

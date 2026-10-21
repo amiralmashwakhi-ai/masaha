@@ -31,7 +31,7 @@ export function Deliverables({ job, role, userId, since, onCount }: {
 
   return (
     <Card>
-      <P>{t('deliverables')}</P>
+      <P title>{t('deliverables')}</P>
       <P muted small>{isProvider ? t('deliverablesHintProvider') : t('deliverablesHintCustomer')}</P>
       {files?.length === 0 && <P muted small>{t('noDeliverables')}</P>}
       {files?.map((f) => (

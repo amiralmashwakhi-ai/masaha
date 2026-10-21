@@ -5,7 +5,9 @@ import { autoReleaseAt, correctionNote, eventText, lastCorrectionAt } from '../e
 import { fmt, split } from '../money';
 import { serviceName, SERVICES, stageTone } from '../services';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
+import { nextStep } from '../nextStep';
 import { ChatBubble, ChatRequests, chatAvailable } from './ChatCard';
+import { NextStepCard, StageTimeline } from './JobGuide';
 import { Deliverables } from './Deliverables';
 import { JobSafety, NeedLicense } from './Safety';
 import { ReviewList } from './ReviewList';
@@ -92,24 +94,25 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
             job.location.areaM2 && `${job.location.areaM2} م²`].filter(Boolean).join(' · ')}</P>
           {job.invitedProviderId && <P muted small>{t('directTo').replace('{n}', providerOf(job.invitedProviderId)?.name ?? t('provider'))}</P>}
           {!!job.notes && <P>{job.notes}</P>}
+          {!!job.visits && <P muted small>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
         </View>
       </Card>
       {siblings.length > 0 && (
         <Card>
-          <P>{t('projectOther')}</P>
+          <P title>{t('projectOther')}</P>
           {siblings.map((x) => (
             <OptionRow key={x.id} icon={SERVICES.find((s) => s.id === x.service)?.icon ?? 'map-marker'}
               title={serviceName(x, t)} subtitle={t(`stage.${x.stage}`)} onPress={() => onOpenJob?.(x.id)} />
           ))}
         </Card>
       )}
+      <NextStepCard step={nextStep(job, role, userId, canQuote)} />
       <ChatRequests job={job} role={role} userId={userId} providers={providers} customerReviews={customerReviews}
         onProfile={onProfile} onAccepted={() => setChatSignal((n) => n + 1)} />
       {chatAvailable(job, role) && <Button title={t('openChat')} icon="chat-processing-outline" secondary onPress={() => setChatSignal((n) => n + 1)} />}
-      {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
       {note && (
         <Card>
-          <P>{t('correctionTitle')}</P>
+          <P title>{t('correctionTitle')}</P>
           <P>{note}</P>
           <P muted small>{t('correctionHint')}</P>
         </Card>
@@ -117,7 +120,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
 
       {!accepted && (
         <Card>
-          <P>{t('quotes')}</P>
+          <P title>{t('quotes')}</P>
           {job.quotes.length === 0 && <P muted>{t('noQuotes')}</P>}
           {job.quotes.map((q) => {
             const p = providerOf(q.providerId);
@@ -167,7 +170,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
 
       {accepted && (
         <Card>
-          <P>{t('agreement')}</P>
+          <P title>{t('agreement')}</P>
           <P muted>{t('agreementBody')}</P>
           <P muted small>{t('feesNote')}</P>
           <P>{`${providerOf(accepted.providerId)?.name} · ${priceLine(accepted)}`}</P>
@@ -193,7 +196,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
 
       {accepted && fullySigned && (
         <Card>
-          <P>{t('escrow')}</P>
+          <P title>{t('escrow')}</P>
           {job.milestones.map((m) => (
             <View key={m.key} style={{ marginTop: 6 }}>
               <P>{`${t(`ms.${m.key}`)}: ${fmt(accepted.priceJod * m.share)} ${t('jod')}`}</P>
@@ -225,9 +228,11 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
         </>
       )}
 
+      <StageTimeline job={job} />
+
       {role === 'provider' && (
         <Card>
-          <P>{t('customerRating')}</P>
+          <P title>{t('customerRating')}</P>
           <ReviewList reviews={customerReviews} />
         </Card>
       )}
@@ -255,7 +260,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
       )}
 
       <Card>
-        <P>{t('record')}</P>
+        <P title>{t('record')}</P>
         {job.events.map((e, i) => <P key={i} muted>{`${e.at.slice(0, 16).replace('T', ' ')} · ${t(e.by === 'masaha' ? 'appName' : e.by)} · ${eventText(e, t)}`}</P>)}
       </Card>
       {(job.customerId === userId || job.providerId === userId) && <JobSafety job={job} role={role} onDone={onChanged} onDeleted={() => { onChanged(); onBack(); }} />}

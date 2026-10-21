@@ -33,14 +33,14 @@ export function EditProvider({ provider, onSave, onBack }: {
       <Field label={t('experienceLines')} value={experience} onChange={setExperience} multiline />
       <Field label={t('equipmentLines')} value={equipment} onChange={setEquipment} multiline />
       <Card>
-        <P>{t('servicesOffered')}</P>
+        <P title>{t('servicesOffered')}</P>
         {SERVICES.map((sv) => (
           <Button key={sv.id} title={t(`service.${sv.id}`)} onPress={() => setServices(toggle(services, sv.id))} secondary={!services.includes(sv.id)} />
         ))}
         {services.includes('other') && <Field label={t('otherServicesLabel')} value={other} onChange={setOther} multiline />}
       </Card>
       <Card>
-        <P>{t('areasServed')}</P>
+        <P title>{t('areasServed')}</P>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {GOVERNORATES.map((g) => (
             <Button key={g} title={t(`gov.${g}`)} onPress={() => setGovs(toggle(govs, g))} secondary={!govs.includes(g)} />

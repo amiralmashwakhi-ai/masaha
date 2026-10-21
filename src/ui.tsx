@@ -49,20 +49,20 @@ export function Header({ onMenu, onBell, unread = 0 }: { onMenu: () => void; onB
   return (
     <View style={[s.header, rtl && { flexDirection: 'row-reverse' }]}>
       <View style={[s.row, rtl && { flexDirection: 'row-reverse' }]}>
-        <Logo size={34} />
+        <Logo size={38} />
         <Text style={s.brand}>{t('appName')}</Text>
       </View>
       <View style={[s.row, rtl && { flexDirection: 'row-reverse' }]}>
         {onBell && (
           <Pressable onPress={onBell} style={s.menuBtn} hitSlop={8} accessibilityLabel={t('notifications')}>
-            <MaterialCommunityIcons name={unread ? 'bell-badge-outline' : 'bell-outline'} size={21} color={colors.primary} />
+            <MaterialCommunityIcons name={unread ? 'bell-badge-outline' : 'bell-outline'} size={24} color={colors.primary} />
             {unread > 0 && (
               <View style={s.badge}><Text style={s.badgeText}>{unread > 9 ? '9+' : unread}</Text></View>
             )}
           </Pressable>
         )}
         <Pressable onPress={onMenu} style={s.menuBtn} hitSlop={8} accessibilityLabel={t('menu')}>
-          <MaterialCommunityIcons name="menu" size={22} color={colors.primary} />
+          <MaterialCommunityIcons name="menu" size={25} color={colors.primary} />
         </Pressable>
       </View>
     </View>
@@ -169,8 +169,8 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
   const { rtl } = useLang();
   return (
     <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 10 }}>
-      <Text style={{ fontSize: 17, fontWeight: '800', color: colors.ink }}>{title}</Text>
-      {action && onAction && <Text onPress={onAction} style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>{action}</Text>}
+      <Text style={{ fontSize: 19, fontWeight: '800', color: colors.ink }}>{title}</Text>
+      {action && onAction && <Text onPress={onAction} style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>{action}</Text>}
     </View>
   );
 }
@@ -183,9 +183,9 @@ export function TileGrid({ children }: { children: React.ReactNode }) {
 export function Tile({ icon, title, subtitle, onPress, tone = 'primary', selected }: { icon: IconName; title: string; subtitle?: string; onPress: () => void; tone?: 'primary' | 'accent'; selected?: boolean }) {
   const { rtl } = useLang();
   return (
-    <Pressable onPress={onPress} style={[s.card, { width: '48.5%', minHeight: 118, gap: 8, alignItems: rtl ? 'flex-end' : 'flex-start' },
+    <Pressable onPress={onPress} style={[s.card, { width: '48.5%', minHeight: 128, gap: 9, alignItems: rtl ? 'flex-end' : 'flex-start' },
       selected && { borderColor: colors.primary, borderWidth: 2 }]}>
-      <IconCircle name={selected ? 'check' : icon} tone={selected ? 'primary' : tone} size={42} />
+      <IconCircle name={selected ? 'check' : icon} tone={selected ? 'primary' : tone} size={50} />
       <Text style={[s.optTitle, rtl && s.rtl]} numberOfLines={2}>{title}</Text>
       {!!subtitle && <Text style={[s.optSub, rtl && s.rtl, { marginTop: 0 }]} numberOfLines={2}>{subtitle}</Text>}
     </Pressable>
@@ -237,17 +237,19 @@ export function H({ children }: { children: React.ReactNode }) {
   return <Text style={[s.h, rtl && s.rtl]}>{children}</Text>;
 }
 
-export function P({ children, muted, small }: { children: React.ReactNode; muted?: boolean; small?: boolean }) {
+// title: a card's heading.
+export function P({ children, muted, small, title }: { children: React.ReactNode; muted?: boolean; small?: boolean; title?: boolean }) {
   const { rtl } = useLang();
-  return <Text style={[s.p, muted && { color: colors.muted }, small && { fontSize: 12, lineHeight: 18 }, rtl && s.rtl]}>{children}</Text>;
+  return <Text style={[s.p, muted && { color: colors.muted }, small && { fontSize: 13, lineHeight: 20 },
+    title && { fontSize: 17.5, fontWeight: '800', lineHeight: 26, marginBottom: 4 }, rtl && s.rtl]}>{children}</Text>;
 }
 
-export function IconCircle({ name, size = 40, tone = 'primary' }: { name: IconName; size?: number; tone?: 'primary' | 'accent' }) {
+export function IconCircle({ name, size = 44, tone = 'primary' }: { name: IconName; size?: number; tone?: 'primary' | 'accent' }) {
   const bg = tone === 'primary' ? colors.primarySoft : colors.accentSoft;
   const fg = tone === 'primary' ? colors.primary : colors.accentInk;
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-      <MaterialCommunityIcons name={name} size={size * 0.55} color={fg} />
+      <MaterialCommunityIcons name={name} size={size * 0.58} color={fg} />
     </View>
   );
 }
@@ -258,7 +260,7 @@ export function Button({ title, onPress, secondary, icon, disabled }: {
   const fg = secondary ? colors.primary : colors.primaryInk;
   return (
     <Pressable onPress={disabled ? undefined : onPress} style={[s.btn, secondary && s.btn2, disabled && { opacity: 0.5 }]}>
-      {icon && <MaterialCommunityIcons name={icon} size={17} color={fg} style={{ marginHorizontal: 6 }} />}
+      {icon && <MaterialCommunityIcons name={icon} size={20} color={fg} style={{ marginHorizontal: 6 }} />}
       <Text style={[s.btnText, { color: fg }]}>{title}</Text>
     </Pressable>
   );
@@ -301,7 +303,7 @@ export function OptionRow({ icon, title, subtitle, onPress, tone }: {
         <Text style={[s.optTitle, rtl && s.rtl]}>{title}</Text>
         {!!subtitle && <Text style={[s.optSub, rtl && s.rtl]}>{subtitle}</Text>}
       </View>
-      {onPress && <MaterialCommunityIcons name={rtl ? 'chevron-left' : 'chevron-right'} size={20} color={colors.muted} />}
+      {onPress && <MaterialCommunityIcons name={rtl ? 'chevron-left' : 'chevron-right'} size={24} color={colors.muted} />}
     </Pressable>
   );
 }
@@ -330,21 +332,21 @@ export function Field({ label, value, onChange, numeric, secure, multiline }: {
 const makeStyles = () => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brand: { fontSize: 17, fontWeight: '700', color: colors.primary },
-  menuBtn: { backgroundColor: colors.primarySoft, width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  brand: { fontSize: 19, fontWeight: '800', color: colors.primary },
+  menuBtn: { backgroundColor: colors.primarySoft, width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  h: { fontSize: 21, fontWeight: '800', color: colors.ink, marginBottom: 10 },
-  p: { fontSize: 14, color: colors.ink, lineHeight: 21 },
+  h: { fontSize: 24, fontWeight: '800', color: colors.ink, marginBottom: 12, lineHeight: 32 },
+  p: { fontSize: 15.5, color: colors.ink, lineHeight: 24 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
-  btn: { flexDirection: 'row', justifyContent: 'center', backgroundColor: colors.primary, minHeight: 48, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.button, alignItems: 'center', marginVertical: 5 },
+  btn: { flexDirection: 'row', justifyContent: 'center', backgroundColor: colors.primary, minHeight: 52, paddingVertical: 13, paddingHorizontal: 18, borderRadius: radius.button, alignItems: 'center', marginVertical: 6 },
   btn2: { backgroundColor: colors.primarySoft },
-  btnText: { fontSize: 15, fontWeight: '700' },
-  link: { color: colors.primary, fontSize: 13, fontWeight: '600', marginVertical: 6 },
-  card: { backgroundColor: colors.card, borderRadius: radius.card, padding: 16, marginBottom: 12, ...shadow },
-  optTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  optSub: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  label: { fontSize: 12, color: colors.muted, marginBottom: 5 },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.input, minHeight: 46, paddingVertical: 10, paddingHorizontal: 12, fontSize: 15, color: colors.ink },
+  btnText: { fontSize: 16, fontWeight: '800' },
+  link: { color: colors.primary, fontSize: 14, fontWeight: '700', marginVertical: 8 },
+  card: { backgroundColor: colors.card, borderRadius: radius.card, padding: 18, marginBottom: 14, ...shadow },
+  optTitle: { fontSize: 16, fontWeight: '800', color: colors.ink },
+  optSub: { fontSize: 13, color: colors.muted, marginTop: 3, lineHeight: 19 },
+  label: { fontSize: 13.5, fontWeight: '600', color: colors.muted, marginBottom: 6 },
+  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.input, minHeight: 50, paddingVertical: 11, paddingHorizontal: 14, fontSize: 16, color: colors.ink },
 });
 let s = makeStyles();

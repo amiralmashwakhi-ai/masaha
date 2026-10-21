@@ -11,6 +11,7 @@ import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
 import { CustomerProfile } from './src/screens/CustomerProfile';
 import { Faq } from './src/screens/Faq';
+import { Guide } from './src/screens/Guide';
 import { Menu } from './src/screens/Menu';
 import { PostEditor, PostFeed } from './src/screens/Posts';
 import { NeedLicense, Notifications } from './src/screens/Safety';
@@ -27,7 +28,7 @@ import { colors, Header, LangCtx, P, setDark } from './src/ui';
 
 type Screen =
   | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId; providerId?: string } | { name: 'editProvider' } | { name: 'settings' }
-  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'faq' }
+  | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'faq' } | { name: 'guide' }
   | { name: 'chats' }
   | { name: 'job'; id: string; back?: Screen; chat?: boolean } | { name: 'profile'; id: string; back: Screen }
   | { name: 'customer'; id: string; back: Screen };
@@ -186,8 +187,11 @@ export default function App() {
         <SafeAreaView key={dark ? 'dark' : 'light'} edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.bg }}>
           <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 8 }}>
             <Header onMenu={() => setMenuOpen(true)} onBell={ready ? () => { setUnread(0); setScreen({ name: 'notifications' }); } : undefined} unread={unread} />
-            {!loading && !session && screen.name !== 'faq' && <SignIn />}
+            {!loading && !session && screen.name !== 'faq' && screen.name !== 'guide' && (
+              <SignIn onFaq={() => setScreen({ name: 'faq' })} onGuide={() => setScreen({ name: 'guide' })} />
+            )}
             {screen.name === 'faq' && <Faq onBack={goHome} />}
+            {screen.name === 'guide' && <Guide role={ready ? role : 'customer'} onBack={goHome} />}
             {session && profile === undefined && <P muted>{ctx.t('loading')}</P>}
             {session && profile === null && userId && (
               <CreateProfile userId={userId} defaultName={session.user.user_metadata?.full_name} onDone={refreshProfile} />
@@ -196,6 +200,9 @@ export default function App() {
             {ready && screen.name === 'home' && (
               <Home
                 role={role}
+                userId={userId!}
+                onFaq={() => setScreen({ name: 'faq' })}
+                onGuide={() => setScreen({ name: 'guide' })}
                 name={profile.full_name}
                 coverUrl={profile.cover_url}
                 jobs={visibleJobs}
@@ -325,6 +332,7 @@ export default function App() {
             onHistory={() => setScreen({ name: 'history' })}
             onSettings={() => setScreen({ name: 'settings' })}
             onFaq={() => setScreen({ name: 'faq' })}
+            onGuide={() => setScreen({ name: 'guide' })}
             onSignOut={() => { signOut(); goHome(); }}
           />
           <StatusBar style={dark ? 'light' : 'dark'} />

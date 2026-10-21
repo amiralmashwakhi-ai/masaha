@@ -121,7 +121,7 @@ function DisputeCard({ job, role, onDone }: { job: Job; role: Role; onDone: () =
   const theirs = role === 'customer' ? d?.provider : d?.customer;
   return (
     <Card>
-      <P>{t('disputeOpen')}</P>
+      <P title>{t('disputeOpen')}</P>
       <P muted small>{t('disputeTalkHint')}</P>
       {theirs && !mine && <P>{t('otherSideSettles')}</P>}
       {mine
@@ -161,7 +161,7 @@ export function LicenseCard({ userId }: { userId: string }) {
   if (!status) return null;
   return (
     <Card>
-      <P>{t('licenseTitle')}</P>
+      <P title>{t('licenseTitle')}</P>
       <P muted small>{t(`license.${status}`)}</P>
       {(status === 'none' || status === 'rejected') && (
         <>
@@ -189,7 +189,7 @@ export function DeleteAccountCard() {
   const [msg, setMsg] = useState('');
   return (
     <Card>
-      <P>{t('deleteAccount')}</P>
+      <P title>{t('deleteAccount')}</P>
       <P muted small>{t('deleteAccountHint')}</P>
       {step === 0 && <Button title={t('deleteAccount')} icon="account-remove-outline" secondary onPress={() => setStep(1)} />}
       {step === 1 && (

@@ -136,7 +136,7 @@ export function RequestWizard({ initialService, invited, onDone, onCancel }: {
       })}
       <Field label={t('notes')} value={notes} onChange={setNotes} />
       <Card>
-        <P>{t('docsNeeded')}</P>
+        <P title>{t('docsNeeded')}</P>
         {docs.map((d) => <P key={d} muted>{`• ${t(`doc.${d}`)}`}</P>)}
       </Card>
       <Card>
