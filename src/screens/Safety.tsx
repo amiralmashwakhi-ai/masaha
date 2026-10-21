@@ -155,6 +155,7 @@ export function LicenseCard({ userId }: { userId: string }) {
   const { t } = useLang();
   const [status, setStatus] = useState<Awaited<ReturnType<typeof data.verificationStatus>> | null>(null);
   const [licenseNo, setLicenseNo] = useState('');
+  const [ownerId, setOwnerId] = useState<data.PickedFile | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   useEffect(() => { data.verificationStatus(userId).then(setStatus); }, [userId]);
@@ -166,13 +167,21 @@ export function LicenseCard({ userId }: { userId: string }) {
       {(status === 'none' || status === 'rejected') && (
         <>
           <Field label={t('licenseNo')} value={licenseNo} onChange={setLicenseNo} />
-          <Button title={t('uploadLicense')} icon="file-upload-outline" disabled={busy || !licenseNo.trim()} onPress={async () => {
+          <P small>{t('ownerIdTitle')}</P>
+          <P muted small>{t('ownerIdHint')}</P>
+          <Button title={ownerId ? `${t('ownerIdChosen')}: ${ownerId.name}` : t('uploadOwnerId')} icon={ownerId ? 'check-circle' : 'card-account-details-outline'} secondary disabled={busy} onPress={async () => {
+            const r = await DocumentPicker.getDocumentAsync({ type: DOC_TYPES, copyToCacheDirectory: true });
+            if (r.canceled || !r.assets[0]) return;
+            const a = r.assets[0];
+            setOwnerId({ uri: a.uri, name: a.name, mime: a.mimeType ?? 'application/pdf' });
+          }} />
+          <Button title={t('uploadLicense')} icon="file-upload-outline" disabled={busy || !licenseNo.trim() || !ownerId} onPress={async () => {
             const r = await DocumentPicker.getDocumentAsync({ type: DOC_TYPES, copyToCacheDirectory: true });
             if (r.canceled || !r.assets[0]) return;
             setBusy(true); setMsg(t('uploading'));
             try {
               const a = r.assets[0];
-              await data.submitLicense(userId, a.uri, a.name, a.mimeType ?? 'application/pdf', licenseNo);
+              await data.submitLicense(userId, { uri: a.uri, name: a.name, mime: a.mimeType ?? 'application/pdf' }, ownerId!, licenseNo);
               setStatus('pending'); setMsg('');
             } catch (e) { setMsg(data.isLicenseTaken(e) ? t('licenseTaken') : t('uploadFailed')); } finally { setBusy(false); }
           }} />

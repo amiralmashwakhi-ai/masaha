@@ -359,12 +359,21 @@ export async function deleteMyAccount(): Promise<'ok' | 'activeJobs' | 'error'> 
 // A licence number can belong to one account only (unique index on providers.license_no).
 export const isLicenseTaken = (e: unknown) => (e as { code?: string })?.code === '23505';
 
-export async function submitLicense(userId: string, uri: string, name: string, mime: string, licenseNo: string) {
-  const body = await (await fetch(uri)).arrayBuffer();
-  const path = `${userId}/${Date.now()}-${name.replace(/[^\w.\-]+/g, '_').slice(-60) || 'licence'}`;
-  const { error } = await supabase.storage.from('licenses').upload(path, body, { contentType: mime });
+export interface PickedFile { uri: string; name: string; mime: string }
+
+// The licence and the owner's ID go to separate private buckets; only operators can read the ID.
+async function uploadPrivate(bucket: string, userId: string, f: PickedFile, fallback: string) {
+  const body = await (await fetch(f.uri)).arrayBuffer();
+  const path = `${userId}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, '_').slice(-60) || fallback}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, body, { contentType: f.mime });
   if (error) throw error;
-  await rpc('submit_license', { p_path: path, p_license_no: licenseNo });
+  return path;
+}
+
+export async function submitLicense(userId: string, licence: PickedFile, ownerId: PickedFile, licenseNo: string) {
+  const idPath = await uploadPrivate('identity', userId, ownerId, 'id');
+  const path = await uploadPrivate('licenses', userId, licence, 'licence');
+  await rpc('submit_license', { p_path: path, p_license_no: licenseNo, p_id_path: idPath });
   // Emails Masaha's office; the bell alert is already sent, so a failure here is not shown.
   supabase.functions.invoke('license-email').catch(() => {});
 }

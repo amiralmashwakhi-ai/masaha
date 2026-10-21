@@ -22,7 +22,7 @@ import { JobActions, JobDetail } from './src/screens/JobDetail';
 import { JobList } from './src/screens/JobList';
 import { ProviderProfile } from './src/screens/ProviderProfile';
 import { RequestWizard } from './src/screens/RequestWizard';
-import { CreateProfile, SignIn } from './src/screens/SignIn';
+import { ConsentGate, CreateProfile, SignIn } from './src/screens/SignIn';
 import { Job, Lang, Provider, Role, ServiceId } from './src/types';
 import { colors, Header, LangCtx, P, setDark } from './src/ui';
 
@@ -134,7 +134,7 @@ export default function App() {
   }, [current?.customerId, role]);
   const viewedProvider = screen.name === 'profile' ? providers.find((p) => p.id === screen.id) : undefined;
   const me = providers.find((p) => p.id === userId);
-  const ready = session && profile;
+  const ready = session && profile && profile.data_consent_at;
   // The provider feed hides jobs another provider won; those stay in History.
   const visibleJobs = role === 'provider'
     ? jobs.filter((j) => j.providerId ? j.providerId === userId : j.stage !== 'cancelled')
@@ -196,6 +196,7 @@ export default function App() {
             {session && profile === null && userId && (
               <CreateProfile userId={userId} defaultName={session.user.user_metadata?.full_name} onDone={refreshProfile} />
             )}
+            {session && profile && !profile.data_consent_at && <ConsentGate onDone={refreshProfile} />}
             {!!error && ready && <P>{error}</P>}
             {ready && screen.name === 'home' && (
               <Home

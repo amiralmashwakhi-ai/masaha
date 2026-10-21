@@ -56,9 +56,13 @@ async function load() {
   $('lic').innerHTML = provs?.length ? '' : '<p class="muted">لا يوجد.</p>';
   for (const p of provs ?? []) {
     const url = p.license_doc_path ? (await sb.storage.from('licenses').createSignedUrl(p.license_doc_path, 900)).data?.signedUrl : null;
+    const { data: ident } = await sb.from('provider_identity').select('doc_path').eq('provider_id', p.id).maybeSingle();
+    const idUrl = ident ? (await sb.storage.from('identity').createSignedUrl(ident.doc_path, 900)).data?.signedUrl : null;
     const el = document.createElement('div'); el.className = 'item';
     el.innerHTML = `<b>${esc(p.display_name)}</b><br><span class="muted">رقم الرخصة: ${esc(p.license_no || '-')}</span>
+      <br><span class="muted">${idUrl ? 'تأكد أن الاسم في الهوية مطابق للاسم في الرخصة قبل القبول.' : 'لم تُرفع هوية صاحب المكتب (نسخة قديمة من التطبيق). ارفض واطلب رفعها من جديد.'}</span>
       <div class="row">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener"><button class="sec">فتح ملف الرخصة</button></a>` : ''}
+      ${idUrl ? `<a href="${esc(idUrl)}" target="_blank" rel="noopener"><button class="sec">فتح الهوية</button></a>` : ''}
       <button data-a="1">قبول</button><button class="warn" data-a="0">رفض</button></div>`;
     el.querySelectorAll('button[data-a]').forEach((b) => b.onclick = () =>
       confirm(b.dataset.a === '1' ? 'قبول رخصة ' + p.display_name + '؟' : 'رفض رخصة ' + p.display_name + '؟')

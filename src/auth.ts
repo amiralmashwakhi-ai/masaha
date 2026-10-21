@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { Role } from './types';
 
-export interface Profile { id: string; role: Role | 'admin'; full_name: string; phone: string | null; cover_url: string | null }
+export interface Profile { id: string; role: Role | 'admin'; full_name: string; phone: string | null; cover_url: string | null; data_consent_at: string | null }
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -26,12 +26,12 @@ export const signIn = (email: string, password: string) =>
   supabase.auth.signInWithPassword({ email, password });
 
 export async function loadProfile(userId: string) {
-  const { data } = await supabase.from('profiles').select('id, role, full_name, phone, cover_url').eq('id', userId).maybeSingle();
+  const { data } = await supabase.from('profiles').select('id, role, full_name, phone, cover_url, data_consent_at').eq('id', userId).maybeSingle();
   return data as Profile | null;
 }
 
 export async function createProfile(userId: string, fullName: string, phone: string, role: Role) {
-  const { error } = await supabase.from('profiles').insert({ id: userId, full_name: fullName, phone, role, terms_accepted_at: new Date().toISOString() });
+  const { error } = await supabase.from('profiles').insert({ id: userId, full_name: fullName, phone, role, terms_accepted_at: new Date().toISOString(), data_consent_at: new Date().toISOString() });
   if (error) return error;
   if (role === 'provider') {
     const res = await supabase.from('providers').insert({ id: userId, kind: 'office', display_name: fullName });
@@ -39,6 +39,9 @@ export async function createProfile(userId: string, fullName: string, phone: str
   }
   return null;
 }
+
+// Users who signed up before the consent to storage outside Jordan was added agree once.
+export const recordConsent = () => supabase.rpc('record_consent');
 
 export const signOut = () => supabase.auth.signOut();
 

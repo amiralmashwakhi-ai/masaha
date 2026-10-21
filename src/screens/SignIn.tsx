@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Linking, ScrollView, View } from 'react-native';
-import { createProfile, sendPasswordReset, signIn, signInWithGoogle, signUp } from '../auth';
+import { createProfile, recordConsent, sendPasswordReset, signIn, signInWithGoogle, signUp } from '../auth';
 import { Role } from '../types';
 import { Button, colors, Field, H, LinkText, Logo, OptionRow, P, useLang } from '../ui';
 
@@ -95,6 +95,29 @@ export function CreateProfile({ userId, defaultName, onDone }: { userId: string;
       <Button title={t('next')} disabled={!agreed || !name.trim()} onPress={async () => {
         if (!name.trim() || !agreed) return;
         const e = await createProfile(userId, name.trim(), phone.trim(), role);
+        if (e) setError(e.message); else onDone();
+      }} />
+      {!!error && <P small>{error}</P>}
+    </ScrollView>
+  );
+}
+
+// Shown once to accounts created before the consent covered storing data outside Jordan.
+export function ConsentGate({ onDone }: { onDone: () => void }) {
+  const { t } = useLang();
+  const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState('');
+  return (
+    <ScrollView keyboardShouldPersistTaps="handled">
+      <H>{t('consentTitle')}</H>
+      <P muted>{t('consentHint')}</P>
+      <OptionRow icon={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'} tone={agreed ? 'primary' : 'accent'} title={t('termsAgree')} onPress={() => setAgreed(!agreed)} />
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+        <LinkText title={t('readTerms')} onPress={() => Linking.openURL(`${SITE}/terms.html`)} />
+        <LinkText title={t('readPrivacy')} onPress={() => Linking.openURL(`${SITE}/privacy.html`)} />
+      </View>
+      <Button title={t('agreeContinue')} disabled={!agreed} onPress={async () => {
+        const { error: e } = await recordConsent();
         if (e) setError(e.message); else onDone();
       }} />
       {!!error && <P small>{error}</P>}

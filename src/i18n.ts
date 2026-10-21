@@ -268,7 +268,7 @@ const en = {
   'op.release': 'Pay the provider',
   'stage.cancelled': 'Cancelled',
   'stage.disputed': 'In dispute',
-  'termsAgree': 'I agree to the Terms and the Privacy Policy',
+  'termsAgree': 'I agree to the terms and privacy policy, and to my data being stored with service providers outside Jordan.',
   'readTerms': 'Read the Terms',
   'readPrivacy': 'Read the Privacy Policy',
   'unverifiedWarn': 'This provider has not been verified by Masaha yet.',
@@ -503,6 +503,13 @@ const en = {
   'rule.govFees': 'Government fees are separate',
   'rule.govFees.hint': 'Prices in Masaha are service fees only. The customer pays government fees directly.',
   'faqShort': 'Land, survey and building-permit questions from official sources',
+  'consentTitle': 'We updated our terms',
+  'consentHint': 'Please read the updated terms and privacy policy and agree to keep using Masaha.',
+  'agreeContinue': 'Agree and continue',
+  'ownerIdTitle': 'ID of the office owner or authorised signatory',
+  'ownerIdHint': 'The name must match the licence. Only the Masaha team can see it; customers never do.',
+  'uploadOwnerId': 'Choose ID or passport (photo or PDF)',
+  'ownerIdChosen': 'ID chosen',
 };
 
 type Key = keyof typeof en;
@@ -774,7 +781,7 @@ const ar: Record<Key, string> = {
   'op.release': 'تحويل المبلغ للمساح',
   'stage.cancelled': 'ملغى',
   'stage.disputed': 'قيد النزاع',
-  'termsAgree': 'أوافق على الشروط وسياسة الخصوصية',
+  'termsAgree': 'أوافق على الشروط وسياسة الخصوصية، وعلى تخزين بياناتي لدى مزودي خدمات خارج الأردن.',
   'readTerms': 'قراءة الشروط',
   'readPrivacy': 'قراءة سياسة الخصوصية',
   'unverifiedWarn': 'لم توثّق مساحة هذا المساح بعد.',
@@ -1009,6 +1016,13 @@ const ar: Record<Key, string> = {
   'rule.govFees': 'الرسوم الحكومية منفصلة',
   'rule.govFees.hint': 'الأسعار في مساحة أتعاب الخدمة فقط، والرسوم الحكومية يدفعها العميل مباشرة للجهة.',
   'faqShort': 'أسئلة الأراضي والمساحة ورخص البناء من المصادر الرسمية',
+  'consentTitle': 'حدّثنا الشروط',
+  'consentHint': 'اقرأ الشروط وسياسة الخصوصية المحدّثة ووافق عليها لتكمل استخدام مساحة.',
+  'agreeContinue': 'موافق ومتابعة',
+  'ownerIdTitle': 'هوية صاحب المكتب أو المفوّض بالتوقيع',
+  'ownerIdHint': 'يجب أن يطابق الاسم الرخصة. لا يراها إلا فريق مساحة، ولا تظهر للعملاء أبداً.',
+  'uploadOwnerId': 'اختر الهوية أو جواز السفر (صورة أو PDF)',
+  'ownerIdChosen': 'تم اختيار الهوية',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };
