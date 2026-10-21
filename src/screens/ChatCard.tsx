@@ -3,8 +3,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as data from '../data';
-import { Job, Provider, Role } from '../types';
+import { Job, Provider, Review, Role } from '../types';
 import { Button, Card, colors, Field, IconCircle, P, useLang } from '../ui';
+import { ReviewList } from './ReviewList';
 import { ReportBlock } from './Safety';
 import { serviceName } from '../services';
 
@@ -169,6 +170,68 @@ export function ChatBubble({ job, role, userId, providers, openSignal }: { job: 
           </View>
         </KeyboardAvoidingView>
       </Modal>
+    </>
+  );
+}
+
+// Shown at the top of the job page when the other side asked to chat: accept or decline here,
+// after looking at who is asking (a surveyor's profile, or the customer's rating and reviews).
+export function ChatRequests({ job, role, userId, providers, customerReviews, onProfile, onAccepted }: {
+  job: Job; role: Role; userId: string; providers: Provider[]; customerReviews: Review[];
+  onProfile: (id: string) => void; onAccepted: () => void;
+}) {
+  const { t, rtl } = useLang();
+  const [chats, setChats] = useState<data.Chat[]>([]);
+  const [showCustomer, setShowCustomer] = useState(false);
+  const [error, setError] = useState('');
+  const load = useCallback(() => { data.listChats(job.id).then(setChats).catch(() => {}); }, [job.id]);
+  useEffect(() => {
+    load();
+    const timer = setInterval(load, POLL_MS * 3);
+    return () => clearInterval(timer);
+  }, [load]);
+  const waiting = chats.filter((c) => c.status === 'pending' && c.requestedBy !== userId);
+  if (!waiting.length) return null;
+  const respond = (id: string, accept: boolean) => async () => {
+    try {
+      await data.respondChat(id, accept);
+      setError('');
+      if (accept) onAccepted();
+    } catch { setError(t('somethingWrong')); }
+    load();
+  };
+  const avg = customerReviews.length ? customerReviews.reduce((a, r) => a + r.stars, 0) / customerReviews.length : 0;
+  return (
+    <>
+      {waiting.map((c) => {
+        const name = role === 'provider' ? t('customer') : providers.find((p) => p.id === c.providerId)?.name || c.providerName || t('provider');
+        return (
+          <Card key={c.id}>
+            <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 }}>
+              <IconCircle name="chat-question-outline" size={38} tone="accent" />
+              <View style={{ flex: 1 }}>
+                <P>{t('chatRequestFrom').replace('{n}', name)}</P>
+                <P muted small>{t('chatRequestCheck')}</P>
+              </View>
+            </View>
+            <Button title={role === 'provider' ? t('viewCustomer') : t('viewProfileOf').replace('{n}', name)} icon="account-search-outline" secondary
+              onPress={() => (role === 'provider' ? setShowCustomer(!showCustomer) : onProfile(c.providerId))} />
+            {role === 'provider' && showCustomer && (
+              <View style={{ marginBottom: 6 }}>
+                <P small>{customerReviews.length
+                  ? `${t('customerRating')}: ${avg.toFixed(1)} ★ · ${customerReviews.length} ${t('reviewsCount')}`
+                  : t('noCustomerReviews')}</P>
+                <ReviewList reviews={customerReviews} />
+              </View>
+            )}
+            <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', gap: 8 }}>
+              <View style={{ flex: 1 }}><Button title={t('acceptChat')} icon="check" onPress={respond(c.id, true)} /></View>
+              <View style={{ flex: 1 }}><Button title={t('declineChat')} secondary onPress={respond(c.id, false)} /></View>
+            </View>
+            {!!error && <P small>{error}</P>}
+          </Card>
+        );
+      })}
     </>
   );
 }

@@ -392,6 +392,11 @@ const en = {
   'faqSearch': 'Search a question or an answer',
   'faqSource': 'Source',
   'faqDisclaimer': 'For general guidance only. Procedures and fees can change, so check with the official body before applying.',
+  'chatRequestFrom': '{n} asked to chat with you',
+  'chatRequestCheck': 'See who is asking first, then accept or decline.',
+  'viewCustomer': 'View the customer\'s rating',
+  'viewProfileOf': 'View {n}\'s page',
+  'noCustomerReviews': 'No reviews for this customer yet.',
 };
 
 type Key = keyof typeof en;
@@ -541,7 +546,7 @@ const ar: Record<Key, string> = {
   chatRequestSent: 'تم إرسال طلب المحادثة. بانتظار الموافقة.',
   chatRequestReceived: 'طلب الطرف الآخر محادثتك بخصوص هذا العمل.',
   acceptChat: 'قبول المحادثة',
-  declineChat: 'رفض',
+  declineChat: 'رفض المحادثة',
   chatDeclined: 'تم رفض طلب المحادثة.',
   chatYouDeclined: 'لقد رفضت هذه المحادثة.',
   openChat: 'فتح المحادثة',
@@ -787,6 +792,11 @@ const ar: Record<Key, string> = {
   'faqSearch': 'ابحث عن سؤال أو جواب',
   'faqSource': 'المصدر',
   'faqDisclaimer': 'للإرشاد العام فقط. الإجراءات والرسوم قد تتغيّر، فتأكد من الجهة الرسمية قبل تقديم المعاملة.',
+  'chatRequestFrom': '{n} يطلب محادثتك',
+  'chatRequestCheck': 'اطّلع على صفحة الطالب أولاً، ثم اقبل أو ارفض.',
+  'viewCustomer': 'عرض تقييمات العميل',
+  'viewProfileOf': 'عرض صفحة {n}',
+  'noCustomerReviews': 'لا توجد تقييمات لهذا العميل بعد.',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

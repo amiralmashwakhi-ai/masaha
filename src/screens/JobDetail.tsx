@@ -5,7 +5,7 @@ import { autoReleaseAt, correctionNote, eventText, lastCorrectionAt } from '../e
 import { fmt, split } from '../money';
 import { serviceName, SERVICES, stageTone } from '../services';
 import { Job, JOB_STAGES, Provider, Review, Role } from '../types';
-import { ChatBubble, chatAvailable } from './ChatCard';
+import { ChatBubble, ChatRequests, chatAvailable } from './ChatCard';
 import { Deliverables } from './Deliverables';
 import { JobSafety, NeedLicense } from './Safety';
 import { ReviewList } from './ReviewList';
@@ -98,6 +98,8 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
           ))}
         </Card>
       )}
+      <ChatRequests job={job} role={role} userId={userId} providers={providers} customerReviews={customerReviews}
+        onProfile={onProfile} onAccepted={() => setChatSignal((n) => n + 1)} />
       {chatAvailable(job, role) && <Button title={t('openChat')} icon="chat-processing-outline" secondary onPress={() => setChatSignal((n) => n + 1)} />}
       {!!job.visits && <P>{`${t('visits')}: ${job.visits}${job.visitLength ? ` · ${t(`len.${job.visitLength}`)}` : ''}${job.withReport != null ? ` · ${job.withReport ? t('withReport') : t('withoutReport')}` : ''}`}</P>}
       {note && (
