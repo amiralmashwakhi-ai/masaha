@@ -3,7 +3,8 @@ import { ScrollView, Text, View } from 'react-native';
 import { fmt } from '../money';
 import { GOVERNORATES, serviceName, SERVICES, stageTone } from '../services';
 import { Job, JOB_STAGES, Role, ServiceId } from '../types';
-import { BackButton, Button, Card, colors, H, IconCircle, Chips, matches, P, Pill, SearchWithFilters, useLang } from '../ui';
+import { BackButton, Button, Card, colors, H, IconCircle, Chips, matches, P, Person, Pill, SearchWithFilters, useLang } from '../ui';
+import { PublicPerson } from '../data';
 
 function Progress({ stage }: { stage: Job['stage'] }) {
   const { t, rtl } = useLang();
@@ -24,8 +25,9 @@ function Progress({ stage }: { stage: Job['stage'] }) {
   );
 }
 
-export function JobList({ role, jobs, onNew, onOpen, onBack }: {
-  role: Role; jobs: Job[]; onNew?: () => void; onOpen: (id: string) => void; onBack: () => void;
+export function JobList({ role, jobs, people = {}, onPerson, onNew, onOpen, onBack }: {
+  role: Role; jobs: Job[]; people?: Record<string, PublicPerson>; onPerson?: (id: string) => void;
+  onNew?: () => void; onOpen: (id: string) => void; onBack: () => void;
 }) {
   const { t, rtl } = useLang();
   const [query, setQuery] = useState('');
@@ -75,6 +77,11 @@ export function JobList({ role, jobs, onNew, onOpen, onBack }: {
         const icon = SERVICES.find((s) => s.id === j.service)?.icon ?? 'map-marker';
         return (
           <Card key={j.id} onPress={() => onOpen(j.id)}>
+            {role === 'provider' && (
+              <View style={{ marginBottom: 10 }}>
+                <Person name={people[j.customerId]?.name ?? t('customer')} subtitle={t('customer')} onPress={onPerson ? () => onPerson(j.customerId) : undefined} />
+              </View>
+            )}
             <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'flex-start', gap: 12 }}>
               <IconCircle name={icon} size={44} />
               <View style={{ flex: 1, gap: 3 }}>

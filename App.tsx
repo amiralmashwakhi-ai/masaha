@@ -9,6 +9,7 @@ import { applyDirection, makeT } from './src/i18n';
 import { EditProvider } from './src/screens/EditProvider';
 import { History } from './src/screens/History';
 import { Home } from './src/screens/Home';
+import { CustomerProfile } from './src/screens/CustomerProfile';
 import { Faq } from './src/screens/Faq';
 import { Menu } from './src/screens/Menu';
 import { PostEditor, PostFeed } from './src/screens/Posts';
@@ -28,7 +29,8 @@ type Screen =
   | { name: 'home' } | { name: 'jobs' } | { name: 'wizard'; service?: ServiceId; providerId?: string } | { name: 'editProvider' } | { name: 'settings' }
   | { name: 'posts' } | { name: 'newPost' } | { name: 'history' } | { name: 'notifications' } | { name: 'faq' }
   | { name: 'chats' }
-  | { name: 'job'; id: string; back?: Screen; chat?: boolean } | { name: 'profile'; id: string; back: Screen };
+  | { name: 'job'; id: string; back?: Screen; chat?: boolean } | { name: 'profile'; id: string; back: Screen }
+  | { name: 'customer'; id: string; back: Screen };
 
 const PREFS = { lang: 'masaha.lang', dark: 'masaha.dark' };
 
@@ -39,6 +41,7 @@ export default function App() {
   const [role, setRole] = useState<Role>('customer');
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [people, setPeople] = useState<Record<string, data.PublicPerson>>({});
   const [providers, setProviders] = useState<Provider[]>([]);
   const [error, setError] = useState('');
   const [unread, setUnread] = useState(0);
@@ -81,6 +84,7 @@ export default function App() {
       const ids = new Set(list.flatMap((j) => j.quotes.map((q) => q.providerId)));
       if (role === 'provider') ids.add(userId);
       setProviders(await data.loadProviders([...ids]));
+      if (role === 'provider') data.publicProfiles([...new Set(list.map((j) => j.customerId))]).then(setPeople).catch(() => {});
       setError('');
     } catch {
       setError(ctx.t('somethingWrong'));
@@ -122,6 +126,11 @@ export default function App() {
   const current = screen.name === 'job'
     ? jobs.find((j) => j.id === screen.id) ?? (extraJob?.id === screen.id ? extraJob : undefined)
     : undefined;
+  // A job opened from a notification may belong to a customer we haven't named yet.
+  useEffect(() => {
+    const id = current?.customerId;
+    if (role === 'provider' && id && !people[id]) data.publicProfiles([id]).then((m) => setPeople((cur) => ({ ...cur, ...m }))).catch(() => {});
+  }, [current?.customerId, role]);
   const viewedProvider = screen.name === 'profile' ? providers.find((p) => p.id === screen.id) : undefined;
   const me = providers.find((p) => p.id === userId);
   const ready = session && profile;
@@ -138,6 +147,7 @@ export default function App() {
     }
     setScreen({ name: 'profile', id, back: screen });
   };
+  const openCustomer = (id: string) => setScreen({ name: 'customer', id, back: screen });
   const goHome = () => setScreen({ name: 'home' });
   // Phone back button on screens without their own back step: go home, and leave the app from home.
   // Registered once at start so each screen's BackButton (registered later) is asked first.
@@ -248,6 +258,8 @@ export default function App() {
               role === 'provider' && !me?.verified ? <NeedLicense onSettings={() => setScreen({ name: 'settings' })} /> : <JobList
                 role={role}
                 jobs={visibleJobs}
+                people={people}
+                onPerson={openCustomer}
                 onNew={() => setScreen({ name: 'wizard' })}
                 onOpen={(id) => setScreen({ name: 'job', id })}
                 onBack={goHome}
@@ -277,6 +289,8 @@ export default function App() {
                   if (extraJob?.id === current.id) data.getJob(current.id).then(setExtraJob).catch(() => {});
                 }}
                 onProfile={openProfile}
+                onCustomer={openCustomer}
+                customerName={people[current.customerId]?.name}
                 openChat={screen.chat}
                 canQuote={!!me?.verified}
                 onVerify={() => setScreen({ name: 'settings' })}
@@ -298,6 +312,7 @@ export default function App() {
                 onBack={() => setScreen(screen.back)}
               />
             )}
+            {ready && screen.name === 'customer' && <CustomerProfile id={screen.id} onBack={() => setScreen(screen.back)} />}
             {ready && screen.name === 'chats' && <Chats onOpen={(id) => { setChatUnread(0); openAnyJob(id, true); }} />}
           </View>
           {ready && <TabBar role={role} active={activeTab} chatUnread={chatUnread} onTab={onTab} />}

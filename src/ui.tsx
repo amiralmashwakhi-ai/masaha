@@ -192,6 +192,21 @@ export function Tile({ icon, title, subtitle, onPress, tone = 'primary', selecte
   );
 }
 
+// Who posted a request or an offer: their initial and name; tapping opens their page.
+export function Person({ name, subtitle, onPress, size = 34 }: { name: string; subtitle?: string; onPress?: () => void; size?: number }) {
+  const { rtl } = useLang();
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} hitSlop={6}
+      style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, alignSelf: rtl ? 'flex-end' : 'flex-start' }}>
+      <Avatar name={name} size={size} />
+      <View>
+        <Text style={[s.optTitle, rtl && s.rtl]} numberOfLines={1}>{name}</Text>
+        {!!subtitle && <Text style={[s.optSub, rtl && s.rtl, { marginTop: 0 }]}>{subtitle}</Text>}
+      </View>
+    </Pressable>
+  );
+}
+
 // Round picture, or the first letter of the name on teal.
 export function Avatar({ name, uri, size = 56 }: { name: string; uri?: string; size?: number }) {
   if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} />;

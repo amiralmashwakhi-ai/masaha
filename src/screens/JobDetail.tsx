@@ -9,7 +9,7 @@ import { ChatBubble, ChatRequests, chatAvailable } from './ChatCard';
 import { Deliverables } from './Deliverables';
 import { JobSafety, NeedLicense } from './Safety';
 import { ReviewList } from './ReviewList';
-import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, Pill, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, OptionRow, P, Person, Pill, useLang } from '../ui';
 
 export interface JobActions {
   unsign: (jobId: string) => void;
@@ -22,9 +22,9 @@ export interface JobActions {
   review: (jobId: string, by: Role, stars: 1 | 2 | 3 | 4 | 5, text: string) => void;
 }
 
-export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, openChat, canQuote, onVerify, siblings = [], onOpenJob, onBack }: {
+export function JobDetail({ job, role, userId, providers, loadCustomerReviews, actions, onChanged, onProfile, onCustomer, customerName, openChat, canQuote, onVerify, siblings = [], onOpenJob, onBack }: {
   job: Job; role: Role; userId: string; providers: Provider[]; loadCustomerReviews: (customerId: string) => Promise<Review[]>; actions: JobActions; onChanged: () => void;
-  onProfile: (id: string) => void; openChat?: boolean; canQuote?: boolean; onVerify?: () => void;
+  onProfile: (id: string) => void; onCustomer?: (id: string) => void; customerName?: string; openChat?: boolean; canQuote?: boolean; onVerify?: () => void;
   siblings?: Job[]; onOpenJob?: (id: string) => void; onBack: () => void;
 }) {
   const { t, rtl } = useLang();
@@ -74,6 +74,11 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
     <View style={{ flex: 1 }}>
     <ScrollView>
       <Card>
+        {role === 'provider' && (
+          <View style={{ marginBottom: 10 }}>
+            <Person name={customerName ?? t('customer')} subtitle={t('customer')} onPress={onCustomer ? () => onCustomer(job.customerId) : undefined} />
+          </View>
+        )}
         <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'flex-start', gap: 12 }}>
           <IconCircle name={SERVICES.find((s) => s.id === job.service)?.icon ?? 'map-marker'} size={48} />
           <View style={{ flex: 1, gap: 4 }}>
@@ -120,7 +125,7 @@ export function JobDetail({ job, role, userId, providers, loadCustomerReviews, a
               <View key={q.id} style={{ borderTopWidth: 1, borderColor: colors.line, paddingTop: 12, marginTop: 12, gap: 4 }}>
                 <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                   <View style={{ flex: 1, gap: 4 }}>
-                    <P>{p?.name ?? ''}</P>
+                    <Person name={p?.name ?? t('provider')} onPress={() => onProfile(q.providerId)} />
                     {p && <Pill text={p.verified ? t('verified') : t('unverified')} tone={p.verified ? 'primary' : 'accent'} icon={p.verified ? 'check-decagram' : undefined} />}
                   </View>
                   <View style={{ alignItems: 'center' }}>

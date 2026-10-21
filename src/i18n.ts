@@ -397,6 +397,7 @@ const en = {
   'viewCustomer': 'View the customer\'s rating',
   'viewProfileOf': 'View {n}\'s page',
   'noCustomerReviews': 'No reviews for this customer yet.',
+  'memberSince': 'Member since',
 };
 
 type Key = keyof typeof en;
@@ -797,6 +798,7 @@ const ar: Record<Key, string> = {
   'viewCustomer': 'عرض تقييمات العميل',
   'viewProfileOf': 'عرض صفحة {n}',
   'noCustomerReviews': 'لا توجد تقييمات لهذا العميل بعد.',
+  'memberSince': 'عضو منذ',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };

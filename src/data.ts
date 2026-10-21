@@ -448,3 +448,13 @@ export async function markChatRead(jobId: string) {
   await supabase.from('notifications').update({ read_at: new Date().toISOString() })
     .eq('job_id', jobId).in('kind', CHAT_KINDS).is('read_at', null);
 }
+
+// Other members' names (profiles themselves stay private).
+export interface PublicPerson { name: string; since: string }
+export async function publicProfiles(ids: string[]): Promise<Record<string, PublicPerson>> {
+  if (!ids.length) return {};
+  const { data, error } = await supabase.rpc('public_profiles', { p_ids: ids });
+  if (error) throw error;
+  return Object.fromEntries((data as { id: string; full_name: string; created_at: string }[])
+    .map((r) => [r.id, { name: r.full_name, since: r.created_at }]));
+}

@@ -6,7 +6,7 @@ import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import * as data from '../data';
 import { GOVERNORATES, SERVICES } from '../services';
 import { Attachment, Role, ServiceId, ServicePost } from '../types';
-import { BackButton, Button, Card, colors, Field, H, IconCircle, Chips, matches, OptionRow, P, SearchWithFilters, useLang } from '../ui';
+import { BackButton, Button, Card, colors, Field, H, IconCircle, Chips, matches, OptionRow, P, Person, SearchWithFilters, useLang } from '../ui';
 import { ReportBlock } from './Safety';
 
 function Attachments({ items }: { items: Attachment[] }) {
@@ -45,6 +45,11 @@ export function PostCard({ post, role, mine, viewerId, onProvider, onRequest, on
   const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <Card>
+      {!mine && (
+        <View style={{ marginBottom: 10 }}>
+          <Person name={post.providerName} subtitle={t('office')} onPress={onProvider ? () => onProvider(post.providerId) : undefined} />
+        </View>
+      )}
       <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 }}>
         <IconCircle name={icon} />
         <View style={{ flex: 1 }}>
