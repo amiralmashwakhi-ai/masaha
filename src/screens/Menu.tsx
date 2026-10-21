@@ -20,9 +20,9 @@ function Item({ icon, title, onPress, right, danger }: {
 }
 
 // The ☰ menu: account items when signed in, plus night mode and language for everyone.
-export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, onSettings, onSignOut }: {
+export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, onSettings, onFaq, onSignOut }: {
   open: boolean; onClose: () => void; signedIn: boolean; onHome: () => void;
-  onProfile: () => void; onHistory: () => void; onSettings: () => void; onSignOut: () => void;
+  onProfile: () => void; onHistory: () => void; onSettings: () => void; onFaq: () => void; onSignOut: () => void;
 }) {
   const { t, rtl, dark, toggleDark, toggleLang } = useLang();
   const insets = useSafeAreaInsets();
@@ -43,6 +43,7 @@ export function Menu({ open, onClose, signedIn, onHome, onProfile, onHistory, on
               <Item icon="cog-outline" title={t('settings')} onPress={go(onSettings)} />
             </>
           )}
+          <Item icon="help-circle-outline" title={t('faq')} onPress={go(onFaq)} />
           <Item icon="weather-night" title={t('nightMode')} onPress={toggleDark}
             right={<Switch value={dark} onValueChange={toggleDark} trackColor={{ true: colors.primary, false: colors.line }} />} />
           <Item icon="translate" title={`${t('language')}: ${t('switchLang')}`} onPress={go(toggleLang)} />

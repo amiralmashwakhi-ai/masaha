@@ -1,0 +1,45 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الأسئلة الشائعة | Masaha مساحة</title><meta name="description" content="أسئلة شائعة عن معاملات الأراضي والمساحة ورخص البناء في الأردن، من المصادر الرسمية.">
+<link rel="stylesheet" href="/style.css"><link rel="icon" href="/favicon.png">
+<style>
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}.chips button{background:var(--soft);color:var(--primary);padding:6px 14px;border-radius:999px;font-weight:600}
+.chips button.on{background:var(--primary);color:#fff}
+#q{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff}
+details{background:#fff;border-radius:16px;padding:12px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(91,80,64,.06)}
+summary{cursor:pointer;font-weight:700}details p{margin:8px 0 0}.src{font-size:14px}
+</style></head><body>
+<header><div class="wrap"><a class="brand" href="/"><img src="/logo.png" alt="">مساحة Masaha</a><nav><a href="/">الرئيسية</a><a href="/terms.html">الشروط والأحكام</a><a href="/refund.html">سياسة الاسترداد</a><a href="/privacy.html">الخصوصية</a><a href="/faq.html">الأسئلة الشائعة</a><a href="/contact.html">اتصل بنا</a></nav></div></header>
+<main><div class="wrap">
+<div class="card">
+<h1>الأسئلة الشائعة</h1>
+<p class="muted">عن معاملات الأراضي والمساحة ورخص البناء. الإجابات مأخوذة من المواقع الرسمية لدائرة الأراضي والمساحة وأمانة عمّان الكبرى ووزارة الإدارة المحلية والبلديات.</p>
+<input id="q" type="search" placeholder="ابحث عن سؤال أو جواب">
+<div class="chips" id="chips"></div>
+</div>
+<div id="list"></div>
+<p class="note">للإرشاد العام فقط. الإجراءات والرسوم قد تتغيّر، فتأكد من الجهة الرسمية قبل تقديم المعاملة. <span id="upd"></span></p>
+</div></main>
+<script>
+// Same data as the app (src/faq.json, copied to website/faq.json).
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Search ignores hamza/taa-marbuta/alef-maqsura differences and diacritics, like the app.
+const norm = (s) => String(s).toLowerCase().replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+let data = { categories: [] }, cat = null;
+function draw() {
+  const words = norm(document.getElementById('q').value).split(/\s+/).filter(Boolean);
+  document.getElementById('chips').innerHTML = [{ id: null, title: 'الكل' }, ...data.categories]
+    .map((c) => `<button class="${c.id === cat ? 'on' : ''}" data-id="${esc(c.id ?? '')}">${esc(c.title)}</button>`).join('');
+  document.querySelectorAll('#chips button').forEach((b) => b.onclick = () => { cat = b.dataset.id || null; draw(); });
+  const html = data.categories.filter((c) => !cat || c.id === cat).map((c) => {
+    const items = c.items.filter((i) => { const h = norm(`${i.q} ${i.a} ${c.title}`); return words.every((w) => h.includes(w)); });
+    if (!items.length) return '';
+    return `<h2>${esc(c.title)}</h2>` + items.map((i) => `<details${words.length ? ' open' : ''}><summary>${esc(i.q)}</summary><p>${esc(i.a)}</p>
+      <p class="src">المصدر: <a href="${esc(i.source)}" target="_blank" rel="noopener">${esc(i.sourceName)}</a></p></details>`).join('');
+  }).join('');
+  document.getElementById('list').innerHTML = html || '<p class="muted">لا توجد نتائج.</p>';
+}
+document.getElementById('q').oninput = draw;
+fetch('/faq.json').then((r) => r.json()).then((d) => { data = d; if (d.updated) document.getElementById('upd').textContent = 'آخر تحديث: ' + d.updated; draw(); });
+</script>
+<footer><div class="wrap"><a href="/terms.html">Terms</a><a href="/refund.html">Refund policy</a><a href="/privacy.html">Privacy</a><a href="/contact.html">Contact</a><a href="/delete-account.html">Delete account</a>
+<p>© 2026 Masaha مساحة. Amman, Jordan.</p></div></footer></body></html>

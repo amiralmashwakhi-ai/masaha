@@ -387,6 +387,11 @@ const en = {
   'sameProject': 'Part of a project: {n} services',
   'projectOther': 'Other services for the same plot',
   'note.licensePending': 'New licence to review',
+  'faq': 'Common questions',
+  'faqHint': 'About land, survey and building-permit transactions. Answers are taken from official government sites (in Arabic).',
+  'faqSearch': 'Search a question or an answer',
+  'faqSource': 'Source',
+  'faqDisclaimer': 'For general guidance only. Procedures and fees can change, so check with the official body before applying.',
 };
 
 type Key = keyof typeof en;
@@ -777,6 +782,11 @@ const ar: Record<Key, string> = {
   'sameProject': 'ضمن مشروع: {n} خدمات',
   'projectOther': 'خدمات أخرى لنفس القطعة',
   'note.licensePending': 'رخصة جديدة بانتظار المراجعة',
+  'faq': 'الأسئلة الشائعة',
+  'faqHint': 'عن معاملات الأراضي والمساحة ورخص البناء. الإجابات مأخوذة من المواقع الرسمية للجهات الحكومية.',
+  'faqSearch': 'ابحث عن سؤال أو جواب',
+  'faqSource': 'المصدر',
+  'faqDisclaimer': 'للإرشاد العام فقط. الإجراءات والرسوم قد تتغيّر، فتأكد من الجهة الرسمية قبل تقديم المعاملة.',
 };
 
 const dict: Record<Lang, Record<Key, string>> = { en, ar };
