@@ -40,6 +40,10 @@ export async function createProfile(userId: string, fullName: string, phone: str
   return null;
 }
 
+// Consent given before the current wording took effect is asked for again (Jordan PDP law 24/2023, art. 15/A/5).
+export const CONSENT_SINCE = '2026-11-20T00:00:00Z';
+export const hasConsent = (p: Profile) => !!p.data_consent_at && Date.parse(p.data_consent_at) >= Date.parse(CONSENT_SINCE);
+
 // Users who signed up before the consent to storage outside Jordan was added agree once.
 export const recordConsent = () => supabase.rpc('record_consent');
 
