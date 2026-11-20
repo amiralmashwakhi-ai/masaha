@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { loadProfile, Profile, signOut, useSession } from './src/auth';
+import { hasConsent, loadProfile, Profile, signOut, useSession } from './src/auth';
 import * as data from './src/data';
 import { applyDirection, makeT } from './src/i18n';
 import { EditProvider } from './src/screens/EditProvider';
@@ -134,7 +134,7 @@ export default function App() {
   }, [current?.customerId, role]);
   const viewedProvider = screen.name === 'profile' ? providers.find((p) => p.id === screen.id) : undefined;
   const me = providers.find((p) => p.id === userId);
-  const ready = session && profile && profile.data_consent_at;
+  const ready = session && profile && hasConsent(profile);
   // The provider feed hides jobs another provider won; those stay in History.
   const visibleJobs = role === 'provider'
     ? jobs.filter((j) => j.providerId ? j.providerId === userId : j.stage !== 'cancelled')
@@ -196,7 +196,7 @@ export default function App() {
             {session && profile === null && userId && (
               <CreateProfile userId={userId} defaultName={session.user.user_metadata?.full_name} onDone={refreshProfile} />
             )}
-            {session && profile && !profile.data_consent_at && <ConsentGate onDone={refreshProfile} />}
+            {session && profile && !hasConsent(profile) && <ConsentGate onDone={refreshProfile} />}
             {!!error && ready && <P>{error}</P>}
             {ready && screen.name === 'home' && (
               <Home
